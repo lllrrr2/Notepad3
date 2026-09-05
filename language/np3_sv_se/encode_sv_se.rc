@@ -62,7 +62,7 @@ BEGIN
     IDS_ENC_UTF16LE                "A4;Unicode (UTF-16 LE);Unicode (UTF-16) LE"
     IDS_ENC_UTF16BE                "A5;Unicode (UTF-16 BE);Unicode (UTF-16) BE"
     IDS_ENC_UTF8                   "A6;UTF-8;Unicode (UTF-8)"
-    IDS_ENC_UTF8SIG                "A7;UTF-8 Signature;Unicode (UTF-8) Signature"
+    IDS_ENC_UTF8SIG                "A7;UTF-8 med signatur;Unicode (UTF-8) med signatur"
 END
 
 STRINGTABLE
@@ -97,12 +97,12 @@ BEGIN
     IDS_ENC_MAC_CYRILLIC           "C;Kyrillisk (Mac);Mac (Kyrillisk)"
     IDS_ENC_WIN_1251               "C;Kyrillisk (Windows-1251);Windows-1251"
     IDS_ENC_ISO_8859_13            "C;Estnisk (ISO-8859-13);ISO-8859-13"
-    IDS_ENC_DOS_863                "C;Fransk-Kanadensisk (DOS-863);DOS-863"
+    IDS_ENC_DOS_863                "C;Fransk-kanadensisk (DOS-863);DOS-863"
     IDS_ENC_DOS_737                "C;Grekisk (DOS-737);DOS-737"
     IDS_ENC_ISO_8859_7             "C;Grekisk (ISO-8859-7);ISO-8859-7"
     IDS_ENC_MAC_GREEK              "C;Grekisk (Mac);Mac (Grekisk)"
     IDS_ENC_WIN_1253               "C;Grekisk (Windows-1253);Windows-1253"
-    IDS_ENC_DOS_869                "C;Grekisk, Modern (DOS-869);DOS-869"
+    IDS_ENC_DOS_869                "C;Grekisk, modern (DOS-869);DOS-869"
     IDS_ENC_DOS_862                "C;Hebreisk (DOS-862);DOS-862"
     IDS_ENC_ISO_8859_8_I           "C;Hebreisk (ISO-8859-8-I);ISO-8859-8-I"
 END
@@ -122,8 +122,8 @@ BEGIN
     IDS_ENC_ISO_8859_15            "C;Latinsk 9 (ISO-8859-15);ISO-8859-15"
     IDS_ENC_DOS_865                "C;Nordisk (DOS-865);DOS-865"
     IDS_ENC_DOS_437                "C;OEM Förenta staterna (DOS-437);DOS-437"
-    IDS_ENC_DOS_858                "C;OEM Multilingual Latinsk 1 (DOS-858);DOS-858"
-    IDS_ENC_DOS_860                "C;Portugisiska (DOS-860);DOS-860"
+    IDS_ENC_DOS_858                "C;OEM flerspråkig latinsk 1 (DOS-858);DOS-858"
+    IDS_ENC_DOS_860                "C;Portugisisk (DOS-860);DOS-860"
     IDS_ENC_MAC_ROMANIAN           "C;Rumänsk (Mac);Mac (Rumänsk)"
 END
 
@@ -143,22 +143,23 @@ BEGIN
     IDS_ENC_WIN_1252               "B;Västeuropeisk (Windows-1252);Windows-1252"
     IDS_ENC_IBM_EBCDIC_US          "D0;IBM EBCDIC (US-Kanada);EBCDIC (US)"
     IDS_ENC_IBM_EBCDIC_INT         "D1;IBM EBCDIC (Internationell);EBCDIC (Int.)"
-    IDS_ENC_IBM_EBCDIC_GR          "D2;IBM EBCDIC (Grekisk Modern);EBCDIC (GR)"
-    IDS_ENC_IBM_EBCDIC_LAT_5       "D3;IBM EBCDIC (Turkisk Latinsk-5);EBCDIC (Latinsk-5)"
+    IDS_ENC_IBM_EBCDIC_GR          "D2;IBM EBCDIC (Grekisk modern);EBCDIC (GR)"
+    IDS_ENC_IBM_EBCDIC_LAT_5       "D3;IBM EBCDIC (Turkisk latinsk-5);EBCDIC (Latinsk-5)"
 END
 
 STRINGTABLE
 BEGIN
     IDS_ENC_EUC_JAPANESE           "C;Japansk (EUC-JP);EUC-JP"
     IDS_ENC_EUC_KOREAN             "C;Koreansk (EUC-KR);EUC-KR"
-    IDS_ENC_ISO_2022_CN            "C;kinesisk (ISO-2022-CN);ISO-2022-CN"
+    IDS_ENC_ISO_2022_CN            "C;Kinesisk (ISO-2022-CN);ISO-2022-CN"
     IDS_ENC_HZ_GB2312              "C;Förenklad kinesisk (HZ-GB-2312);HZ-GB-2312"
     IDS_ENC_ISO_2022_JP            "C;Japansk (ISO-2022-JP);ISO-2022-JP"
     IDS_ENC_ISO_2022_KR            "C;Koreansk (ISO-2022-KR);ISO-2022-KR"
     IDS_ENC_X_CHINESE_CNS          "C;Traditionell kinesisk (CNS);x-Chinese-CNS"
     IDS_ENC_JOHAB                  "C;Koreansk (Johab);Koreansk (Johab)"
     IDS_ENC_ISO_8859_10            "B;Nordisk (ISO-8859-10);ISO-8859-10"
-    IDS_ENC_BIG5_HKSCS             "C;Traditionell Kinesisk (Big5-HKSCS);Big5-HKSCS"
+    IDS_ENC_BIG5_HKSCS             "C;Traditionell kinesisk (Big5-HKSCS);Big5-HKSCS"
+    IDS_ENC_DOS_855                "B;Kyrillisk (CP-855);CP-855"
 END
 
 

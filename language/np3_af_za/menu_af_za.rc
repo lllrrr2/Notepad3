@@ -79,7 +79,7 @@ BEGIN
         BEGIN
             MENUITEM "&Soek in lêers...\tCtrl+Shift+F",        IDM_GREP_WIN_SEARCH
             MENUITEM SEPARATOR
-            MENUITEM "&Nuwe Leë Venster\tAlt+N",            IDM_FILE_NEWWINDOW
+            MENUITEM "&Nuwe Venster\tAlt+N",                IDM_FILE_NEWWINDOW
             MENUITEM "&Dubbele Instansie\tAlt+Shift+N",     IDM_FILE_NEWWINDOW2
             MENUITEM SEPARATOR
             MENUITEM "&Herlaai Verhoogde",                  IDM_FILE_LAUNCH_ELEVATED
@@ -91,7 +91,10 @@ BEGIN
             MENUITEM "Web Sjabloon &1\tCtrl+Shift+1",       CMD_WEBACTION1
             MENUITEM "Web Sjabloon &2\tCtrl+Shift+2",       CMD_WEBACTION2
             MENUITEM SEPARATOR
-            MENUITEM "Maak &File Explorer Oop",             IDM_FILE_EXPLORE_DIR
+            MENUITEM "Maak die &Vouer met die Seleksie Oop", IDM_EDIT_OPEN_CONTAINING_FOLDER_SEL
+            MENUITEM "Maak &Lêer Oop vanaf Seleksie",        IDM_EDIT_OPEN_FILE_FROM_SEL
+            MENUITEM SEPARATOR
+            MENUITEM "Maak File &Explorer Oop",             IDM_FILE_EXPLORE_DIR
         END
         MENUITEM SEPARATOR
         MENUITEM "Keer terug &van Lêer af\tF5",             IDM_FILE_REVERT
@@ -154,7 +157,7 @@ BEGIN
     END
     POPUP "&Wysig"
     BEGIN
-        MENUITEM "Document &Read Only"                      IDM_VIEW_READONLY
+        MENUITEM "D&okument Slegs Lees",                    IDM_VIEW_READONLY
         MENUITEM SEPARATOR
         MENUITEM "O&ngedaan\tCtrl+Z",                       IDM_EDIT_UNDO
         MENUITEM "Oo&rdoen\tCtrl+Y",                        IDM_EDIT_REDO
@@ -163,11 +166,14 @@ BEGIN
         MENUITEM "Ko&pieer\tCtrl+C",                        IDM_EDIT_COPY
         MENUITEM "Kop&ieer Alles\tAlt+C",                   IDM_EDIT_COPYALL
         MENUITEM "Kopieer &Voeg\tCtrl+E",                   IDM_EDIT_COPYADD
+        MENUITEM "Kopieer as RT&F",                         IDM_EDIT_COPYRTF
         MENUITEM "&Plak\tCtrl+V",                           IDM_EDIT_PASTE
         MENUITEM "&Uitruil\tCtrl+K",                        IDM_EDIT_SWAP
-        MENUITEM "&Verwyder\tDel",                          IDM_EDIT_CLEAR
-        MENUITEM "Maak &Klipbord Skoon",                    IDM_EDIT_CLEARCLIPBOARD
         MENUITEM "Kies &Alles\tCtrl+A",                     IDM_EDIT_SELECTALL
+        MENUITEM "&Verwyder\tDel",                          IDM_EDIT_CLEAR
+        MENUITEM SEPARATOR
+        MENUITEM "Maak &Klipbord Skoon",                    IDM_EDIT_CLEARCLIPBOARD
+        MENUITEM "Klembord-&monitering wissel",             IDM_EDIT_TOGGLE_PASTEBOARD
         MENUITEM SEPARATOR
         POPUP "W&oorde"
         BEGIN
@@ -314,6 +320,9 @@ BEGIN
             MENUITEM "Kies &Woord of Lyne\tCtrl+Spc",                       IDM_EDIT_SELECTWORD
             MENUITEM "Multi-Select &Alles wat Pas\tCtrl+Shift+Spc",         IDM_EDIT_SELECTALLMATCHES
             MENUITEM SEPARATOR
+            MENUITEM "Maak die &Vouer met die Seleksie Oop",                IDM_EDIT_OPEN_CONTAINING_FOLDER_SEL
+            MENUITEM "Maak &Lêer Oop vanaf Seleksie",                       IDM_EDIT_OPEN_FILE_FROM_SEL
+            MENUITEM SEPARATOR
             MENUITEM "Verdeel en Onttrek &Transaksies by Lynbrekings",      IDM_VIEW_SPLIT_UNDOTYPSEQ_LNBRK
         END
         MENUITEM SEPARATOR
@@ -350,6 +359,7 @@ BEGIN
         MENUITEM "Wys &Oorvloei Simbole\tCtrl+Shift+7",     IDM_VIEW_WORDWRAPSYMBOLS
         MENUITEM "W&ys Oop Spasies\tCtrl+Shift+8",          IDM_VIEW_SHOWBLANKS
         MENUITEM "Wys Lyn &Einde\tCtrl+Shift+9",            IDM_VIEW_SHOWEOLS
+        MENUITEM "Wys nie-&drukbare karakters",             IDM_VIEW_NONPRINTINGCHARS
         MENUITEM SEPARATOR
         POPUP "Verander Geskiedenismerker"
         BEGIN
@@ -358,15 +368,15 @@ BEGIN
             MENUITEM "Wys slegs in Dokument",               IDM_VIEW_CHGHIST_DOCTXT
             MENUITEM "Wys alle Veranderingsmerkers",        IDM_VIEW_CHGHIST_ALL
         END
-        MENUITEM "Vee Verandering/Ontdoen Geskiedenis"      IDM_VIEW_CHGHIST_CLEAR_UNDOREDO
+        MENUITEM "Vee Verandering/Ontdoen Geskiedenis",     IDM_VIEW_CHGHIST_CLEAR_UNDOREDO
         MENUITEM SEPARATOR
         MENUITEM "Skakel &Hotspots\tCtrl+Alt+W",            IDM_VIEW_HYPERLINKHOTSPOTS
         POPUP "&Kleur Definisie Hotspots",
         BEGIN
-            MENUITEM "&AF",                                 IDM_VIEW_COLORDEFHOTSPOTS
-            MENUITEM "&RGB+A"                               IDM_VIEW_COLOR_RGBA
-            MENUITEM "&A+RGB"                               IDM_VIEW_COLOR_ARGB
-            MENUITEM "&BGRA"                                IDM_VIEW_COLOR_BGRA
+            MENUITEM "A&F",                                 IDM_VIEW_COLORDEFHOTSPOTS
+            MENUITEM "&RGB+A",                              IDM_VIEW_COLOR_RGBA
+            MENUITEM "&A+RGB",                              IDM_VIEW_COLOR_ARGB
+            MENUITEM "&BGRA",                               IDM_VIEW_COLOR_BGRA
         END
         MENUITEM "Merk &Unicode-punte",                     IDM_VIEW_UNICODE_POINTS
         MENUITEM "&Visuele Hakie Passing\tCtrl+Shift+V",    IDM_VIEW_MATCHBRACES
@@ -477,12 +487,13 @@ BEGIN
         MENUITEM "Outo-Sluit &HTML/XML\tCtrl+Shift+H",              IDM_SET_AUTOCLOSETAGS
         MENUITEM "O&uto-Voltooi Woorde",                            IDM_SET_AUTOCOMPLETEWORDS
         MENUITEM "Outo-Voltooi Le&xer-Sleutel-Woorde",              IDM_SET_AUTOCLEXKEYWORDS
-        MENUITEM "Alternate Word Se&parators\tCtrl+Alt+A",          IDM_SET_ALTERNATE_WORD_SEPS
+        MENUITEM "Alternatiewe woord&skeiers\tCtrl+Alt+A",          IDM_SET_ALTERNATE_WORD_SEPS
         MENUITEM SEPARATOR
         MENUITEM "Slegs Een Keer per &Lêer",                        IDM_SET_SINGLEFILEINSTANCE
         MENUITEM "Lêerverandering-&Kennisgewing...\tAlt+F5",        IDM_SET_CHANGENOTIFY
-        MENUITEM "AutoSave / Backup Settings...",                   IDM_SET_AUTOSAVE_BACKUP
-        MENUITEM "&Mute Message Beeps",                             IDM_SET_MUTE_MESSAGEBEEP
+        MENUITEM "OutoStoor / Rugsteun-instellings...",                   IDM_SET_AUTOSAVE_BACKUP
+        MENUITEM "&Berichtpiepklanke demp",                             IDM_SET_MUTE_MESSAGEBEEP
+        MENUITEM "Omskep na &UNC-paaie",                    IDM_SET_RESOLVE_UNC_PATHS
         POPUP "&Esc Sleutel Funksie"
         BEGIN
             MENUITEM "&Geen",                                   IDM_SET_NOESCFUNC
@@ -491,14 +502,19 @@ BEGIN
         END
         MENUITEM "Stoor Voor L&opende Tools",                   IDM_SET_SAVEBEFORERUNNINGTOOLS
         MENUITEM "Bereken Tiny-E&xpressions",                   IDM_SET_EVALTINYEXPRONSEL
-        MENUITEM "Enable Multiple Selection",                   IDM_SET_MULTIPLE_SELECTION
+        MENUITEM "Meervoudige keuse aktiveer",                   IDM_SET_MULTIPLE_SELECTION
+        POPUP "Default &Directory"
+        BEGIN
+            MENUITEM "Stel in op huidige lêer se &gids",  IDM_SET_DEFAULTDIR
+            MENUITEM "&Herstel na verstek",                 IDM_SET_DEFAULTDIR_RESET
+        END
         MENUITEM SEPARATOR
         POPUP "Ont&hou"
         BEGIN
             MENUITEM "&Onthou Onlangse Lêers",              IDM_SET_NOSAVERECENT
             MENUITEM "Bewaar &Caret Posisie",               IDM_SET_NOPRESERVECARET
             MENUITEM "On&thou Soekpatroon",                 IDM_SET_NOSAVEFINDREPL
-            MENUITEM "&Autoload Recent File",               IDM_SET_AUTOLOAD_MRU_FILE
+            MENUITEM "&Laai onlangse lêer outomaties",               IDM_SET_AUTOLOAD_MRU_FILE
         END
         POPUP "&Venster"
         BEGIN
@@ -549,8 +565,8 @@ BEGIN
         MENUITEM "Begin Administrasie Program...",          IDM_HELP_ADMINEXE
         MENUITEM "Check &Webwerf vir Opdatering",           IDM_HELP_UPDATEWEBSITE
         MENUITEM SEPARATOR
-        MENUITEM "&Command Line Help...",                   IDM_HELP_CMD
-        MENUITEM "&About...\tShift+F1",                     IDM_HELP_ABOUT
+        MENUITEM "&Opdragreëlhulp...",                   IDM_HELP_CMD
+        MENUITEM "&Omtrent...\tShift+F1",                     IDM_HELP_ABOUT
     END
 END
 
@@ -560,9 +576,10 @@ BEGIN
     POPUP "+"
     BEGIN
         MENUITEM "Maak Skakel Oop",                         CMD_OPEN_HYPERLINK
+        MENUITEM "Hiperskakel-URL kopieer",           CMD_COPY_HYPERLINK
         MENUITEM SEPARATOR
-        MENUITEM "Undo",                                    IDM_EDIT_UNDO
-        MENUITEM "Redo",                                    IDM_EDIT_REDO
+        MENUITEM "Ontdoen",                                    IDM_EDIT_UNDO
+        MENUITEM "Herdoen",                                    IDM_EDIT_REDO
         MENUITEM SEPARATOR
         MENUITEM "Sny",                                     IDM_EDIT_CUT
         MENUITEM "Kopie",                                   IDM_EDIT_COPY
@@ -571,10 +588,23 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Kies Alles",                              IDM_EDIT_SELECTALL
         MENUITEM SEPARATOR
+        POPUP "Convert Case"
+        BEGIN
+            MENUITEM "Hoofletters",              CMD_CTX_UPPERCASE
+            MENUITEM "Kleinletters",              CMD_CTX_LOWERCASE
+            MENUITEM SEPARATOR
+            MENUITEM "Kas omruil",            CMD_CTX_INVERTCASE
+            MENUITEM "Titelkas",             CMD_CTX_TITLECASE
+            MENUITEM "Sinkas",          CMD_CTX_SENTENCECASE
+        END
+        MENUITEM SEPARATOR
         MENUITEM "Wissel Huidige Vou",                      IDM_VIEW_TOGGLE_CURRENT_FOLD
         MENUITEM SEPARATOR
         MENUITEM "Web Sjabloon 1",                          CMD_WEBACTION1
         MENUITEM "Web Sjabloon 2",                          CMD_WEBACTION2
+        MENUITEM SEPARATOR
+        MENUITEM "Maak die Vouer met die Seleksie Oop",     IDM_EDIT_OPEN_CONTAINING_FOLDER_SEL
+        MENUITEM "Maak &Lêer Oop vanaf Seleksie",           IDM_EDIT_OPEN_FILE_FROM_SEL
         MENUITEM "Maak File Explorer Oop",                  IDM_FILE_EXPLORE_DIR
     END
     POPUP "+"
@@ -599,7 +629,7 @@ BEGIN
         MENUITEM "Kode Vou",                                IDM_VIEW_FOLDING
         MENUITEM "Lyn Nommer",                              IDM_VIEW_LINENUMBERS
         MENUITEM "Bookmerk Ruglyn",                         IDM_VIEW_BOOKMARK_MARGIN
-        MENUITEM "Change History Margin",                   IDM_VIEW_CHGHIST_TOGGLE_MARGIN
+        MENUITEM "Wysigingsgeskiedenismarge",                   IDM_VIEW_CHGHIST_TOGGLE_MARGIN
     END
     POPUP "+"
     BEGIN

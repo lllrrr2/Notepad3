@@ -79,7 +79,7 @@ BEGIN
         BEGIN
             MENUITEM "&Localizar em Arquivos...\tCtrl+Shift+F",    IDM_GREP_WIN_SEARCH
             MENUITEM SEPARATOR
-            MENUITEM "&Nova Janela Vazia\tAlt+N",           IDM_FILE_NEWWINDOW
+            MENUITEM "&Nova Janela\tAlt+N",                 IDM_FILE_NEWWINDOW
             MENUITEM "&Duplicar Instância\tAlt+Shift+N",   IDM_FILE_NEWWINDOW2
             MENUITEM SEPARATOR
             MENUITEM "&Recarregar como Administrador",  IDM_FILE_LAUNCH_ELEVATED
@@ -90,6 +90,9 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Modelo Web &1\tCtrl+Shift+1",     CMD_WEBACTION1
             MENUITEM "Modelo Web &2\tCtrl+Shift+2",     CMD_WEBACTION2
+            MENUITEM SEPARATOR
+            MENUITEM "Abrir pasta de &trabalho da seleção", IDM_EDIT_OPEN_CONTAINING_FOLDER_SEL
+            MENUITEM "Abrir ar&quivo da seleção",       IDM_EDIT_OPEN_FILE_FROM_SEL
             MENUITEM SEPARATOR
             MENUITEM "Abri &Gerenciador de Arquivos",   IDM_FILE_EXPLORE_DIR
         END
@@ -154,7 +157,7 @@ BEGIN
     END
     POPUP "&Editar"
     BEGIN
-        MENUITEM "Documento somente leitu&ra"       IDM_VIEW_READONLY
+        MENUITEM "Docum&ento somente leitura",      IDM_VIEW_READONLY
         MENUITEM SEPARATOR
         MENUITEM "&Desfazer\tCtrl+Z",               IDM_EDIT_UNDO
         MENUITEM "&Refazer\tCtrl+Y",                IDM_EDIT_REDO
@@ -163,11 +166,14 @@ BEGIN
         MENUITEM "&Copiar\tCtrl+C",                 IDM_EDIT_COPY
         MENUITEM "Copiar &Tudo\tAlt+C",             IDM_EDIT_COPYALL
         MENUITEM "Cop&iar Adicional\tCtrl+E",       IDM_EDIT_COPYADD
+        MENUITEM "Copiar como RT&F",                IDM_EDIT_COPYRTF
         MENUITEM "&Colar\tCtrl+V",                  IDM_EDIT_PASTE
         MENUITEM "T&rocar\tCtrl+K",                 IDM_EDIT_SWAP
-        MENUITEM "&Apagar\tDel",                    IDM_EDIT_CLEAR
-        MENUITEM "L&impar Área de Transferência",   IDM_EDIT_CLEARCLIPBOARD
         MENUITEM "&Selecionar Tudo\tCtrl+A",        IDM_EDIT_SELECTALL
+        MENUITEM "&Apagar\tDel",                    IDM_EDIT_CLEAR
+        MENUITEM SEPARATOR
+        MENUITEM "L&impar Área de Transferência",   IDM_EDIT_CLEARCLIPBOARD
+        MENUITEM "Ativar/Desativar &Monitorar Área de Transferência",  IDM_EDIT_TOGGLE_PASTEBOARD
         MENUITEM SEPARATOR
         POPUP "P&alavras"
         BEGIN
@@ -314,6 +320,9 @@ BEGIN
             MENUITEM "Selecionar &Palavras ou Linhas\tCtrl+Spc",             IDM_EDIT_SELECTWORD
             MENUITEM "Multi-Seleção de &Todos os Casados\tCtrl+Shift+Spc",   IDM_EDIT_SELECTALLMATCHES
             MENUITEM SEPARATOR
+            MENUITEM "Abrir pasta de &trabalho da seleção",                IDM_EDIT_OPEN_CONTAINING_FOLDER_SEL
+            MENUITEM "Abrir ar&quivo da seleção",                           IDM_EDIT_OPEN_FILE_FROM_SEL
+            MENUITEM SEPARATOR
             MENUITEM "Dividir &Transações Desfeitas nas Quebras de Linha",   IDM_VIEW_SPLIT_UNDOTYPSEQ_LNBRK
         END
         MENUITEM SEPARATOR
@@ -350,6 +359,7 @@ BEGIN
         MENUITEM "Mostrar Símbolos de Q&uebra\tCtrl+Shift+7",   IDM_VIEW_WORDWRAPSYMBOLS
         MENUITEM "Mostrar &Espaços\tCtrl+Shift+8",              IDM_VIEW_SHOWBLANKS
         MENUITEM "Mostrar &Finais de Linha\tCtrl+Shift+9",      IDM_VIEW_SHOWEOLS
+        MENUITEM "Exibir caracteres não &imprimíveis",          IDM_VIEW_NONPRINTINGCHARS
         MENUITEM SEPARATOR
         POPUP "Alterar Marcador de Histórico"
         BEGIN
@@ -358,15 +368,15 @@ BEGIN
             MENUITEM "Mostrar somente no Documento",              IDM_VIEW_CHGHIST_DOCTXT
             MENUITEM "Mostrar Todos os Marcadores Alterados",     IDM_VIEW_CHGHIST_ALL
         END
-        MENUITEM "Limpar Histórico de Alterações/Desfazer"        IDM_VIEW_CHGHIST_CLEAR_UNDOREDO
+        MENUITEM "Limpar Histórico de Alterações/Desfazer",       IDM_VIEW_CHGHIST_CLEAR_UNDOREDO
         MENUITEM SEPARATOR
-        MENUITEM "Hotspots de &Hyperlink\tCtrl+Alt+W",          IDM_VIEW_HYPERLINKHOTSPOTS
+        MENUITEM "Hotspots de &Hyperlink\tCtrl+Alt+W",            IDM_VIEW_HYPERLINKHOTSPOTS
         POPUP "Definição de &Cores dos Hotspots"
         BEGIN
-            MENUITEM "Desligado",                        IDM_VIEW_COLORDEFHOTSPOTS
-            MENUITEM "&RGB+A"                            IDM_VIEW_COLOR_RGBA
-            MENUITEM "&A+RGB"                            IDM_VIEW_COLOR_ARGB
-            MENUITEM "&BGRA"                             IDM_VIEW_COLOR_BGRA
+            MENUITEM "&Desligado",                       IDM_VIEW_COLORDEFHOTSPOTS
+            MENUITEM "&RGB+A",                           IDM_VIEW_COLOR_RGBA
+            MENUITEM "&A+RGB",                           IDM_VIEW_COLOR_ARGB
+            MENUITEM "&BGRA",                            IDM_VIEW_COLOR_BGRA
         END
         MENUITEM "Destacar Pontos-&Unicode",                            IDM_VIEW_UNICODE_POINTS
         MENUITEM "&Visualizar Pares de Chaves Casados\tCtrl+Shift+V",   IDM_VIEW_MATCHBRACES
@@ -483,6 +493,7 @@ BEGIN
         MENUITEM "Notificação de &Mudança de Arquivo...\tAlt+F5",       IDM_SET_CHANGENOTIFY
         ///MENUITEM "Configurações de Salvar Automático / Backup...",            IDM_SET_AUTOSAVE_BACKUP
         MENUITEM "Deixar Mudo Avisos &Sonoros de Mensagens",            IDM_SET_MUTE_MESSAGEBEEP
+        MENUITEM "Resolver para os Caminhos da &UNC",                   IDM_SET_RESOLVE_UNC_PATHS
         POPUP "Função da &Tecla Esc"
         BEGIN
             MENUITEM "&Nada",                IDM_SET_NOESCFUNC
@@ -492,6 +503,11 @@ BEGIN
         MENUITEM "Salvar &Antes de Executar Ferramentas Externas",   IDM_SET_SAVEBEFORERUNNINGTOOLS
         MENUITEM "Calcular Tiny-E&xpressions",                       IDM_SET_EVALTINYEXPRONSEL
         MENUITEM "Habilitar Seleção Múltipla",                       IDM_SET_MULTIPLE_SELECTION
+        POPUP "Pasta pa&drão"
+        BEGIN
+            MENUITEM "Definir para a &pasta do arquivo atual",  IDM_SET_DEFAULTDIR
+            MENUITEM "&Restaurar padrão",                       IDM_SET_DEFAULTDIR_RESET
+        END
         MENUITEM SEPARATOR
         POPUP "&Lembrar"
         BEGIN
@@ -560,6 +576,7 @@ BEGIN
     POPUP "+"
     BEGIN
         MENUITEM "Abrir Hyperlink",                            CMD_OPEN_HYPERLINK
+        MENUITEM "Copiar URL do Hyperlink",           CMD_COPY_HYPERLINK
         MENUITEM SEPARATOR
         MENUITEM "Desfazer",                                   IDM_EDIT_UNDO
         MENUITEM "Refazer",                                    IDM_EDIT_REDO
@@ -571,11 +588,24 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Selecionar Tudo",                            IDM_EDIT_SELECTALL
         MENUITEM SEPARATOR
+        POPUP "Converter Maiúsculas/Minúsculas"
+        BEGIN
+            MENUITEM "MAIÚSCULAS",              CMD_CTX_UPPERCASE
+            MENUITEM "minúsculas",              CMD_CTX_LOWERCASE
+            MENUITEM SEPARATOR
+            MENUITEM "Inverter Maiúsculas/Minúsculas",            CMD_CTX_INVERTCASE
+            MENUITEM "Primeira Letra da Palavra Maiúscula",             CMD_CTX_TITLECASE
+            MENUITEM "Primeira Letra Maiúscula",          CMD_CTX_SENTENCECASE
+        END
+        MENUITEM SEPARATOR
         MENUITEM "Tocar Dobra Atual",                          IDM_VIEW_TOGGLE_CURRENT_FOLD
         MENUITEM SEPARATOR
         MENUITEM "Abrir Ação Web 1",                           CMD_WEBACTION1
         MENUITEM "Abrir Ação Web 2",                           CMD_WEBACTION2
-        MENUITEM "Abri Gerenciador de Arquivos",               IDM_FILE_EXPLORE_DIR
+        MENUITEM SEPARATOR
+        MENUITEM "Abrir pasta de trabalho da seleção", IDM_EDIT_OPEN_CONTAINING_FOLDER_SEL
+        MENUITEM "Abrir arquivo da seleção",           IDM_EDIT_OPEN_FILE_FROM_SEL
+        MENUITEM "Abrir Gerenciador de Arquivos",               IDM_FILE_EXPLORE_DIR
     END
     POPUP "+"
     BEGIN

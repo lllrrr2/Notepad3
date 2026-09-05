@@ -15,6 +15,9 @@
 #include <cmath>
 #include <climits>
 
+#include <stdexcept>
+#include <utility>
+#include <string>
 #include <string_view>
 #include <vector>
 #include <map>
@@ -266,7 +269,6 @@ struct FontDirectWrite : public FontWin {
 		if (fp.italic) {
 			style = DWRITE_FONT_STYLE_ITALIC;
 		}
-// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 
 		const std::wstring wsLocale = WStringFromUTF8(fp.localeName);
 		const FLOAT fHeight = static_cast<FLOAT>(fp.size);
@@ -283,6 +285,7 @@ struct FontDirectWrite : public FontWin {
 				stretch,
 				fHeight, L"en-us", pTextFormat.ReleaseAndGetAddressOf());
 		}
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 		if (SUCCEEDED(hr)) {
 			pTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
@@ -1121,7 +1124,7 @@ public:
 	ScreenLineLayout &operator=(ScreenLineLayout &&) = delete;
 	~ScreenLineLayout() noexcept override = default;
 	size_t PositionFromX(XYPOSITION xDistance, bool charPosition) override;
-	XYPOSITION XFromPosition(size_t caretPosition) noexcept override;
+	XYPOSITION XFromPosition(size_t caretPosition) override;
 	std::vector<Interval> FindRangeIntervals(size_t start, size_t end) override;
 };
 
@@ -1301,7 +1304,7 @@ size_t ScreenLineLayout::PositionFromX(XYPOSITION xDistance, bool charPosition) 
 
 // Finds the point of the caret position
 
-XYPOSITION ScreenLineLayout::XFromPosition(size_t caretPosition) noexcept {
+XYPOSITION ScreenLineLayout::XFromPosition(size_t caretPosition) {
 	if (!textLayout) {
 		return 0.0;
 	}

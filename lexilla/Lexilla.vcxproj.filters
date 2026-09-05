@@ -209,8 +209,11 @@
     <ClCompile Include="lexers_x\LexKotlin.cxx">
       <Filter>lexers_x</Filter>
     </ClCompile>
-    <ClCompile Include="lexers_x\LexJSON.cxx">
+    <ClCompile Include="lexers_x\LexJSON5.cxx">
       <Filter>lexers_x</Filter>
+    </ClCompile>
+    <ClCompile Include="lexers\LexJSON.cxx">
+      <Filter>lexers</Filter>
     </ClCompile>
     <ClCompile Include="lexlib\Accessor.cxx">
       <Filter>lexlib</Filter>
@@ -255,6 +258,9 @@
       <Filter>lexers</Filter>
     </ClCompile>
     <ClCompile Include="lexers_x\LexAHK.cxx">
+      <Filter>lexers_x</Filter>
+    </ClCompile>
+    <ClCompile Include="lexers_x\LexAHK2.cxx">
       <Filter>lexers_x</Filter>
     </ClCompile>
     <ClCompile Include="lexers\LexKix.cxx">

@@ -17,6 +17,8 @@ void Lexer_GetStreamCommentStrgs(LPWSTR beg_out, LPWSTR end_out, size_t maxlen)
         case SCLEX_AU3:
             SET_STREAMCOMMENT_STRG(L"#cs", L"#ce");
             break;
+        case SCLEX_AHK:
+        case SCLEX_AHK2:
         case SCLEX_AVS:
         case SCLEX_CPP:
         case SCLEX_CSS:
@@ -65,7 +67,6 @@ void Lexer_GetStreamCommentStrgs(LPWSTR beg_out, LPWSTR end_out, size_t maxlen)
             assert("SciCall_GetLexer() UNDEFINED!" && 0);
         // ------------------
         case SCLEX_NULL:
-        case SCLEX_AHK:
         case SCLEX_ASM:
         case SCLEX_BASH:
         case SCLEX_BATCH:
@@ -137,6 +138,7 @@ bool Lexer_GetLineCommentStrg(LPWSTR pre_out, size_t maxlen)
         case SCLEX_PROPERTIES:
             SET_COMMENT_STRG(L";", true);
         case SCLEX_AHK:
+        case SCLEX_AHK2:
         case SCLEX_AU3:
         case SCLEX_REGISTRY:
             SET_COMMENT_STRG(L";", false);
@@ -269,13 +271,70 @@ void Lexer_SetLexerSpecificProperties(const int lexerId) {
         break;
 
     case SCLEX_JSON:
-        SciCall_SetProperty("lexer.json.allow.comments", "1");
+        //~SciCall_SetProperty("lexer.json.allow.comments", "1");
         SciCall_SetProperty("lexer.json.escape.sequence", "1");
+        break;
+
+    case SCLEX_JSON5:
+        SciCall_SetProperty("lexer.json5.allow.comments", "1");
+        SciCall_SetProperty("lexer.json5.escape.sequence", "1");
         break;
 
     case SCLEX_PYTHON:
         SciCall_SetProperty("tab.timmy.whinge.level", "1");
         SciCall_SetProperty("lexer.python.strings.f", "1");
+        SciCall_SetProperty("lexer.python.literals.binary", "1");
+        SciCall_SetProperty("lexer.python.strings.u", "1");
+        SciCall_SetProperty("lexer.python.strings.b", "1");
+        SciCall_SetProperty("lexer.python.strings.over.newline", "0");
+        SciCall_SetProperty("lexer.python.unicode.identifiers", "1");
+        SciCall_SetProperty("lexer.python.identifier.attributes", "0");
+        break;
+
+    case SCLEX_ASM:
+        SciCall_SetProperty("lexer.asm.comment.delimiter", ";");
+        SciCall_SetProperty("fold.asm.syntax.based", "1");
+        SciCall_SetProperty("fold.asm.comment.multiline", "1");
+        SciCall_SetProperty("fold.asm.comment.explicit", "0");
+        SciCall_SetProperty("fold.asm.explicit.start", ";{");
+        SciCall_SetProperty("fold.asm.explicit.end", ";}");
+        SciCall_SetProperty("fold.asm.explicit.anywhere", "0");
+        break;
+
+    case SCLEX_BASH:
+        SciCall_SetProperty("lexer.bash.styling.inside.string", "1");
+        SciCall_SetProperty("lexer.bash.styling.inside.backticks", "1");
+        SciCall_SetProperty("lexer.bash.styling.inside.parameter", "1");
+        SciCall_SetProperty("lexer.bash.styling.inside.heredoc", "1");
+        SciCall_SetProperty("lexer.bash.command.substitution", "1");
+        SciCall_SetProperty("lexer.bash.nested.backticks", "1");
+        SciCall_SetProperty("lexer.bash.special.parameter", "1");
+        break;
+
+    case SCLEX_D:
+        SciCall_SetProperty("fold.d.syntax.based", "1");
+        SciCall_SetProperty("fold.d.comment.multiline", "1");
+        SciCall_SetProperty("fold.d.comment.explicit", "0");
+        SciCall_SetProperty("fold.d.explicit.start", "//{");
+        SciCall_SetProperty("fold.d.explicit.end", "//}");
+        SciCall_SetProperty("fold.d.explicit.anywhere", "0");
+        SciCall_SetProperty("lexer.d.fold.at.else", "1");
+        break;
+
+    case SCLEX_JULIA:
+        SciCall_SetProperty("fold.julia.docstring", "1");
+        SciCall_SetProperty("fold.julia.syntax.based", "1");
+        SciCall_SetProperty("lexer.julia.highlight.typeannotation", "1");
+        SciCall_SetProperty("lexer.julia.highlight.lexerror", "1");
+        break;
+
+    case SCLEX_KOTLIN:
+        SciCall_SetProperty("fold", "1");
+        SciCall_SetProperty("fold.comment", "1");
+        break;
+
+    case SCLEX_NIM:
+        SciCall_SetProperty("lexer.nim.raw.strings.highlight.ident", "1");
         break;
 
     case SCLEX_VERILOG:

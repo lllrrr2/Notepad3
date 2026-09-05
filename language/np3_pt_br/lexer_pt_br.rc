@@ -101,6 +101,7 @@ BEGIN
     IDS_LEX_REG_FILES       "Arquivos de Registro"
     IDS_LEX_VHDL            "VHDL"
     IDS_LEX_JSON            "JSON"
+    IDS_LEX_JSON5           "JSON5"
     IDS_LEX_NSIS            "NSIS"
     IDS_LEX_INNO            "Inno (Script de Configuração)"
     IDS_LEX_RUBY            "Ruby (Script)"
@@ -109,6 +110,7 @@ BEGIN
     IDS_LEX_AUTOIT3         "AutoIt3 (Script)"
     IDS_LEX_LATEX           "Arquivos LaTeX"
     IDS_LEX_AHK             "AutoHotkey (Script)"
+    IDS_LEX_AHK2            "AutoHotkey v2 Script"
     IDS_LEX_CMAKE           "Cmake (Script)"
     IDS_LEX_AVI_SYNTH       "AviSynth (Script)"
 END
@@ -136,6 +138,7 @@ STRINGTABLE
 BEGIN
     IDS_LEX_VERILOG         "HDL da Verilog"
     IDS_LEX_SYSVERILOG      "HDVL da SystemVerilog"
+    IDS_LEX_ABAQUS          "ABAQUS"
 END
 
 STRINGTABLE
@@ -153,7 +156,7 @@ BEGIN
     IDS_LEX_STD_SEL         "Texto Selecionado (Cores)"
     IDS_LEX_STD_WSPC        "Espaço em branco (Cores, Tamanho 1-12)"
     IDS_LEX_STD_LN_BACKGR   "Marcar Linha Atual"
-    IDS_LEX_STD_CARET       "Indicador de Inserção (^) (Cor, Tamanho 1-3)"
+    IDS_LEX_STD_CARET       "Indicador de Inserção (^) (Cor, Tamanho 1-20)"
     IDS_LEX_STD_LONG_LN     "Marcador de Linha Longo (Cores)"
     IDS_LEX_STD_X_SPC       "Espaçamento de Linhas Extra (Tamanho)"
     IDS_LEX_2ND_STYLE       "Segundo estilo padrão"
@@ -168,8 +171,14 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_LEX_STD_NPCH        "Caracteres não imprimíveis (Cores)"
+    IDS_LEX_2ND_NPCH        "2º caracteres não imprimíveis (Cores)"
+END
+
+STRINGTABLE
+BEGIN
     IDS_LEX_2ND_LN_BACKGR   "Segundo Marcar Linha Atual"
-    IDS_LEX_2ND_CARET       "Segundo Indicador de Inserção (^) (Cor, Tamanho 1-3)"
+    IDS_LEX_2ND_CARET       "Segundo Indicador de Inserção (^) (Cor, Tamanho 1-20)"
     IDS_LEX_2ND_LONG_LN     "Segundo Marcador de Linha Extra Longo (Cores)"
     IDS_LEX_2ND_X_SPC       "Segundo Espaçamento de Linha Extra (Tamanho)"
     IDS_LEX_STD_BKMRK       "Marca-Página e Folding (Cores, Tamanho)"
@@ -515,6 +524,51 @@ BEGIN
     IDS_LEX_STR_SysTasks    "Tarefas do Sistema"
     IDS_LEX_STR_AfterLabel  "Depois do Rótulo"
     IDS_LEX_STR_Table       "Tabela"
+    IDS_LEX_STR_StarCmd     "Comando de Estrela"
+    IDS_LEX_STR_SlashCmd    "Comando de Barra"
+    IDS_LEX_STR_Processor   "Processador"
+    IDS_LEX_STR_Argument    "Argumento"
+    IDS_LEX_STR_SGMLCmd     "Comando SGML"
+    IDS_LEX_STR_SGMLParam   "1º parâmetro SGML"
+    IDS_LEX_STR_SGMLStr     "String SGML"
+    IDS_LEX_STR_SGMLErr     "Erro SGML"
+    IDS_LEX_STR_SGMLSpc     "Especial SGML"
+    IDS_LEX_STR_SGMLEnt     "Entidade SGML"
+    IDS_LEX_STR_SGMLCmt     "Comentário SGML"
+    IDS_LEX_STR_SGMLBlk     "Bloco SGML padrão"
+    IDS_LEX_STR_AU3Expand   "Expandir variável"
+    IDS_LEX_STR_COMObj      "Objeto COM"
+    IDS_LEX_STR_DocCmt      "Comentário Doc"
+    IDS_LEX_STR_InstProp    "Propriedade da instância"
+    IDS_LEX_STR_UserLit     "Literal do usuário"
+    IDS_LEX_STR_HdrText     "Texto do cabeçalho"
+    IDS_LEX_STR_PerlXlat    "Transliteração tr///"
+    IDS_LEX_STR_PerlIVRx    "Var interpolado (regex/crases)"
+    IDS_LEX_STR_PerlIVQQ    "Var interpolado (qq/qx/here)"
+    IDS_LEX_STR_HereStr     "String Here"
+    IDS_LEX_STR_RbHereDoc   "Here-Doc"
+    IDS_LEX_STR_RbPctStr    "%-String"
+    IDS_LEX_STR_RbPctWord   "%-Lista de palavras/símbolos"
+    IDS_LEX_STR_RbDemoted   "Palavra-chave rebaixada"
+    IDS_LEX_STR_RbStdStream "Stream padrão"
+    IDS_LEX_STR_CStr        "String C"
+    IDS_LEX_STR_QOper       "Operador citado"
+    IDS_LEX_STR_TclExpand   "Expansão {*}"
+    IDS_LEX_STR_Keyword47   "Palavra-chave 4-7"
+    IDS_LEX_STR_Keyword8    "Palavra-chave 8"
+    IDS_LEX_STR_MacroDef    "Definição de macro"
+    IDS_LEX_STR_Macro       "Macro"
+    IDS_LEX_STR_Typedef     "Typedef"
+    IDS_LEX_STR_Class       "Classe"
+    IDS_LEX_STR_Verbatim    "Verbatim"
+    IDS_LEX_STR_Escape      "Escape"
+    IDS_LEX_STR_ParamExp    "Expansão de parâmetros"
+    IDS_LEX_STR_SyntaxOp    "Operador de sintaxe"
+    IDS_LEX_STR_IfDef       "Definição If"
+    IDS_LEX_STR_WhileDef    "Definição While"
+    IDS_LEX_STR_ForEachDef  "Definição For Each"
+    IDS_LEX_STR_DocCmtKw    "Palavra-chave do comentário Doc"
+    IDS_LEX_STR_UserDef     "Definido pelo usuário"
 END
 
 STRINGTABLE

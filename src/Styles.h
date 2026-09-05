@@ -60,6 +60,7 @@ float  Style_GetCurrentLexerFontSize();
 void   Style_SetLexer(HWND hwnd,PEDITLEXER pLexNew);
 void   Style_FillRelatedStyles(HWND hwnd, const PEDITLEXER pLexer);
 void   Style_SetUrlHotSpot(HWND hwnd);
+void   Style_SetNonPrintCharRepresentations(HWND hwnd);
 void   Style_SetInvisible(HWND hwnd, bool);
 //void   Style_SetReadonly(HWND hwnd, bool);
 void   Style_HighlightCurrentLine(HWND hwnd, int);
@@ -129,10 +130,8 @@ inline void Style_PrintfCchColor(LPWSTR buffer, const size_t cch, LPCWSTR prefix
     }
 }
 
-#if 0
-bool   Style_StrGetStretchValue(LPCWSTR lpszWeight, int* stretch);
-void   Style_AppendStretchStr(LPWSTR lpszWeight, int cchSize, int fontStretch);
-#endif
+bool   Style_StrGetStretchValue(LPCWSTR lpszStyle, int* stretch);
+void   Style_AppendStretchAttribute(LPWSTR lpszStyle, int cchSize, int fontStretch);
 
 #endif //_NP3_STYLES_H_
 

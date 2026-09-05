@@ -34,11 +34,13 @@ __declspec(dllexport) int       Scintilla_AdjustWindowRectForDpi(LPWRECT lpRect,
 #endif
 
 // Include header that defines basic numeric types.
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 #if defined(__cplusplus)
 #include <cstdint>
 #else
 #include <stdint.h>
 #endif
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 
 // Define uptr_t, an unsigned integer type large enough to hold a pointer.
 typedef uintptr_t uptr_t;
@@ -57,7 +59,9 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCI_START 2000
 #define SCI_OPTIONAL_START 3000
 #define SCI_LEXER_START 4000
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 #define SCI_DEV_USER_DEFINED 6000
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 #define SCI_ADDTEXT 2001
 #define SCI_ADDSTYLEDTEXT 2002
 #define SCI_INSERTTEXT 2003
@@ -91,6 +95,7 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCI_SETVIEWWS 2021
 #define SCTD_LONGARROW 0
 #define SCTD_STRIKEOUT 1
+#define SCTD_CONTROLCHAR 2
 #define SCI_GETTABDRAWMODE 2698
 #define SCI_SETTABDRAWMODE 2699
 #define SCI_POSITIONFROMPOINT 2022
@@ -125,8 +130,10 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SC_IME_INLINE 1
 #define SCI_GETIMEINTERACTION 2678
 #define SCI_SETIMEINTERACTION 2679
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 #define SCI_ISIMEOPEN 6003
 #define SCI_ISIMEMODECJK 6004
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 #define SC_ALPHA_TRANSPARENT 0
 #define SC_ALPHA_OPAQUE 255
 #define SC_ALPHA_NOALPHA 256
@@ -267,7 +274,9 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCI_STYLESETEOLFILLED 2057
 #define SCI_STYLERESETDEFAULT 2058
 #define SCI_STYLESETUNDERLINE 2059
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 #define SCI_STYLESETSTRIKE 6001
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 #define SC_CASE_MIXED 0
 #define SC_CASE_UPPER 1
 #define SC_CASE_LOWER 2
@@ -280,7 +289,9 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCI_STYLEGETFONT 2486
 #define SCI_STYLEGETEOLFILLED 2487
 #define SCI_STYLEGETUNDERLINE 2488
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 #define SCI_STYLEGETSTRIKE 6002
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 #define SCI_STYLEGETCASE 2489
 #define SCI_STYLEGETCHARACTERSET 2490
 #define SCI_STYLEGETVISIBLE 2491
@@ -537,7 +548,9 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCFIND_NONE 0x0
 #define SCFIND_WHOLEWORD 0x2
 #define SCFIND_MATCHCASE 0x4
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 #define SCFIND_DOT_MATCH_ALL 0x1000
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 #define SCFIND_WORDSTART 0x00100000
 #define SCFIND_REGEXP 0x00200000
 #define SCFIND_POSIX 0x00400000
@@ -863,8 +876,6 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SC_POPUP_TEXT 2
 #define SCI_USEPOPUP 2371
 #define SCI_SELECTIONISRECTANGLE 2372
-#define SC_MIN_ZOOM_LEVEL 10
-#define SC_MAX_ZOOM_LEVEL 1000
 #define SCI_SETZOOM 2373
 #define SCI_GETZOOM 2374
 #define SC_DOCUMENTOPTION_DEFAULT 0
@@ -882,6 +893,7 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SC_STATUS_OK 0
 #define SC_STATUS_FAILURE 1
 #define SC_STATUS_BADALLOC 2
+#define SC_STATUS_OUTSIDE_DOCUMENT 3
 #define SC_STATUS_WARN_START 1000
 #define SC_STATUS_WARN_REGEX 1001
 #define SCI_SETSTATUS 2382
@@ -1214,12 +1226,16 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCI_RELEASELINECHARACTERINDEX 2712
 #define SCI_LINEFROMINDEXPOSITION 2713
 #define SCI_INDEXPOSITIONFROMLINE 2714
+#define SCI_GETDRAGDROPENABLED 2818
+#define SCI_SETDRAGDROPENABLED 2819
 #define SCI_STARTRECORD 3001
 #define SCI_STOPRECORD 3002
 #define SCI_GETLEXER 4002
 #define SCI_COLOURISE 4003
 #define SCI_SETPROPERTY 4004
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 #define KEYWORDSET_MAX 15
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 #define SCI_SETKEYWORDS 4005
 #define SCI_GETPROPERTY 4008
 #define SCI_GETPROPERTYEXPANDED 4009
@@ -1278,6 +1294,8 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SC_UPDATE_SELECTION 0x2
 #define SC_UPDATE_V_SCROLL 0x4
 #define SC_UPDATE_H_SCROLL 0x8
+#define SC_UPDATE_TEXT 0x10
+#define SC_UPDATE_LINE_COUNT 0x20
 #define SCEN_CHANGE 768
 #define SCEN_SETFOCUS 512
 #define SCEN_KILLFOCUS 256
@@ -1349,6 +1367,10 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCN_MARGINRIGHTCLICK 2031
 #define SCN_AUTOCSELECTIONCHANGE 2032
 #ifndef SCI_DISABLE_PROVISIONAL
+#define SCALE_TECHNIQUE_DEFAULT 0
+#define SCALE_TECHNIQUE_PIXEL_ALIGNED 1
+#define SCI_SETSCALETECHNIQUE 2820
+#define SCI_GETSCALETECHNIQUE 2821
 #define SC_BIDIRECTIONAL_DISABLED 0
 #define SC_BIDIRECTIONAL_L2R 1
 #define SC_BIDIRECTIONAL_R2L 2
@@ -1444,7 +1466,7 @@ struct SCNotification {
 	Sci_Position position;
 	/* SCN_STYLENEEDED, SCN_DOUBLECLICK, SCN_MODIFIED, SCN_MARGINCLICK, */
 	/* SCN_MARGINRIGHTCLICK, SCN_NEEDSHOWN, SCN_DWELLSTART, SCN_DWELLEND, */
-	/* SCN_CALLTIPCLICK, */
+	/* SCN_UPDATEUI, SCN_CALLTIPCLICK, */
 	/* SCN_HOTSPOTCLICK, SCN_HOTSPOTDOUBLECLICK, SCN_HOTSPOTRELEASECLICK, */
 	/* SCN_INDICATORCLICK, SCN_INDICATORRELEASE, */
 	/* SCN_USERLISTSELECTION, SCN_AUTOCCOMPLETED, SCN_AUTOCSELECTION, */

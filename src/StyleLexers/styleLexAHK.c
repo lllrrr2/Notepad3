@@ -5,9 +5,9 @@
 KEYWORDLIST KeyWords_AHK = {
 
     // Flow of Control
-    "Break Catch Continue Critical Else Exit ExitApp Finally For GoSub Goto If Loop "
-    "Reg OnError OnExit Pause Reload Return SetBatchLines Sleep Switch Thread "
-    "Throw Try Until While",
+    "Break Catch Class Continue Critical Else Exit ExitApp Extends Finally For Get GoSub Goto "
+    "If Loop New Reg OnError OnExit Pause Reload Return Set SetBatchLines Sleep Static Switch "
+    "Thread Throw Try Until While",
 
     // Commands
     "AutoTrim BlockInput Click ClipWait ControlAddItem ControlChoose ControlChooseString "
@@ -146,6 +146,8 @@ KEYWORDLIST KeyWords_AHK = {
     "xp xs ym yp ys",
     
     // User Defined
+    // User slot 7
+    "",
     NULL,
 
     NULL
@@ -153,27 +155,29 @@ KEYWORDLIST KeyWords_AHK = {
 
 
 EDITLEXER lexAHK = {
-    SCLEX_AHK, "ahk", IDS_LEX_AHK, L"AutoHotkey Script", L"ahk; ahkl; ia; scriptlet", L"",
+    SCLEX_AHK, "ahk", IDS_LEX_AHK, L"AutoHotkey Script", L"ahk; ahkl; ia", L"",
     &KeyWords_AHK, {
         { {STYLE_DEFAULT}, IDS_LEX_STR_Default, L"Default", L"", L"" },
         //{ SCE_AHK_DEFAULT, IDS_LEX_STR_Default, L"Default", L"", L"" },
         { {MULTI_STYLE(SCE_AHK_COMMENTLINE,SCE_AHK_COMMENTBLOCK,0,0)}, IDS_LEX_STR_Comment, L"Comment", L"fore:#008000", L"" },
-        { {SCE_AHK_ESCAPE}, IDS_LEX_STR_63306, L"Escape", L"fore:#FF8000", L"" },
-        { {SCE_AHK_SYNOPERATOR}, IDS_LEX_STR_Special, L"Syntax Operator", L"fore:#7F200F", L"" },
+        { {SCE_AHK_COMMENTDOC}, IDS_LEX_STR_DocCmt, L"Doc Comment", L"italic; fore:#3F7F5F", L"" },
+        { {SCE_AHK_ESCAPE}, IDS_LEX_STR_Escape, L"Escape", L"fore:#FF8000", L"" },
+        { {SCE_AHK_SYNOPERATOR}, IDS_LEX_STR_SyntaxOp, L"Syntax Operator", L"fore:#7F200F", L"" },
         { {SCE_AHK_EXPOPERATOR}, IDS_LEX_STR_63308, L"Expression Operator", L"fore:#FF4F00", L"" },
         { {SCE_AHK_STRING}, IDS_LEX_STR_String, L"String", L"fore:#747474", L"" },
         { {SCE_AHK_NUMBER}, IDS_LEX_STR_Number, L"Number", L"fore:#416CAD", L"" },
         { {SCE_AHK_IDENTIFIER}, IDS_LEX_STR_Identifier, L"Identifier", L"fore:#CF2F0F", L"" },
         { {SCE_AHK_VARREF}, IDS_LEX_STR_63309, L"Variable Dereferencing", L"fore:#CF2F0F; back:#E4FFE4", L"" },
         { {SCE_AHK_LABEL}, IDS_LEX_STR_Label, L"Label", L"fore:#000000; back:#FFFFA1", L"" },
+        { {SCE_AHK_HOTSTRINGOPT}, IDS_LEX_STR_HotStrgOp, L"HotStringOption", L"bold; fore:#7F007F", L"" },
         { {SCE_AHK_WORD_CF}, IDS_LEX_STR_63310, L"Flow of Control", L"bold; fore:#880088", L"" },
         { {SCE_AHK_WORD_CMD}, IDS_LEX_STR_Cmd, L"Command", L"fore:#0036D9", L"" },
-        { {SCE_AHK_WORD_FN}, IDS_LEX_STR_63277, L"Function", L"italic; fore:#0F707F", L"" },
+        { {SCE_AHK_WORD_FN}, IDS_LEX_STR_Function, L"Function", L"italic; fore:#0F707F", L"" },
         { {SCE_AHK_WORD_DIR}, IDS_LEX_STR_63203, L"Directive", L"italic; fore:#F04020", L"" },
         { {SCE_AHK_WORD_KB}, IDS_LEX_STR_63311, L"Keys & Buttons", L"bold; fore:#FF00FF", L"" },
         { {SCE_AHK_WORD_VAR}, IDS_LEX_STR_63312, L"Built-In Variables", L"italic; fore:#CF00CF", L"" },
-        { {SCE_AHK_WORD_SP}, IDS_LEX_STR_63376, L"Special", L"italic; fore:#BD8E00", L"" },
-        //{ {SCE_AHK_WORD_UD}, IDS_LEX_STR_63106, L"User Defined", L"fore:#800020", L"" },
+        { {SCE_AHK_WORD_SP}, IDS_LEX_STR_Special, L"Special", L"italic; fore:#BD8E00", L"" },
+        { {SCE_AHK_WORD_UD}, IDS_LEX_STR_UserDef, L"User Defined", L"fore:#800020", L"" },
         { {SCE_AHK_VARREFKW}, IDS_LEX_STR_63313, L"Variable Keyword", L"italic; fore:#CF00CF; back:#F9F9FF", L"" },
         EDITLEXER_SENTINEL
     }

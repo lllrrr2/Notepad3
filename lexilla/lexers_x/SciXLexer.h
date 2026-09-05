@@ -7,6 +7,8 @@
 #define SCLEX_CSV         201
 #define SCLEX_KOTLIN      202
 #define SCLEX_SYSVERILOG  203
+#define SCLEX_JSON5       204
+#define SCLEX_AHK2        205   /* AutoHotkey v2 — shares SCE_AHK_* style ids */
 
 // -----------------------------------------------------------------------------
 // !!!!! ADD  Lexer Linkage in:  scintilla\src\Catalogue.cxx  !!!!!
@@ -33,6 +35,8 @@
 #define SCE_AHK_WORD_UD 18
 #define SCE_AHK_VARREFKW 19
 #define SCE_AHK_ERROR 20
+#define SCE_AHK_HOTSTRINGOPT 21
+#define SCE_AHK_COMMENTDOC 22
 
 
 #define SCE_CSV_DEFAULT 0
@@ -75,24 +79,22 @@
 #define SCE_KOTLIN_FUNCTION_DEFINITION 26
 
 
-//#define SCE_YAML_DEFAULT 0
-//#define SCE_YAML_COMMENT 1
-//#define SCE_YAML_IDENTIFIER 2
-//#define SCE_YAML_KEYWORD 3
-//#define SCE_YAML_NUMBER 4
-//#define SCE_YAML_REFERENCE 5
-//#define SCE_YAML_DOCUMENT 6
-//#define SCE_YAML_TEXT 7
-//#define SCE_YAML_ERROR 8
-//#define SCE_YAML_OPERATOR 9
-//#define SCE_YAML_DIRECTIVE 10
-//#define SCE_YAML_STRING1 11
-//#define SCE_YAML_STRING2 12
-//#define SCE_YAML_ESCAPECHAR 13
-//#define SCE_YAML_KEY 14
-//#define SCE_YAML_BLOCK_SCALAR 15
-//#define SCE_YAML_TAG 16
-//#define SCE_YAML_VERBATIM_TAG 17
-//#define SCE_YAML_DATETIME 18
-//#define SCE_YAML_INDENTED_TEXT 19
-//
+// JSON5 / JSON-LD homebrew lexer (SCLEX_JSON5).  Style values mirror the
+// strict-JSON SCE_JSON_* range in SciLexer.h so visual themes can share
+// colors, but the symbols live in their own namespace to keep the strict
+// and JSON5 lexers independent.
+#define SCE_JSON5_DEFAULT 0
+#define SCE_JSON5_NUMBER 1
+#define SCE_JSON5_STRING 2
+#define SCE_JSON5_STRINGEOL 3
+#define SCE_JSON5_PROPERTYNAME 4
+#define SCE_JSON5_ESCAPESEQUENCE 5
+#define SCE_JSON5_LINECOMMENT 6
+#define SCE_JSON5_BLOCKCOMMENT 7
+#define SCE_JSON5_OPERATOR 8
+#define SCE_JSON5_URI 9
+#define SCE_JSON5_COMPACTIRI 10
+#define SCE_JSON5_KEYWORD 11
+#define SCE_JSON5_LDKEYWORD 12
+#define SCE_JSON5_ERROR 13
+

@@ -27,6 +27,8 @@
 
 #include "Scintilla.h"
 
+#include "timsort/timsort.h"
+
 // ============================================================================
 // ---  Disable/Enable some CodeAnalysis Warnings  ---
 
@@ -53,6 +55,9 @@
 #define CONSTSTRGLEN(s)  (COUNTOF(s)-1)
 
 #define NOOP ((void)0)
+
+//~#define NP3_SORT qsort   // not stable, O(n log n) worst-case performance, but O(n) best-case performance for already sorted data
+#define NP3_SORT timsort // stable, adaptive, iterative mergesort with O(n log n) worst-case and O(n) best-case performance
 
 // ============================================================================
 
@@ -417,6 +422,7 @@ static inline int IsFullHD(HWND hwnd, int resX, int resY)
 // ----------------------------------------------------------------------------
 
 HRESULT PrivateSetCurrentProcessExplicitAppUserModelID(PCWSTR AppID);
+HRESULT SetWindowAppUserModelID(HWND hwnd, PCWSTR AppID);
 
 bool IsProcessElevated();
 //bool IsUserAdmin();
@@ -428,8 +434,8 @@ void        BackgroundWorker_Start(BackgroundWorker* worker, _beginthreadex_proc
 void        BackgroundWorker_Cancel(BackgroundWorker* worker);
 void        BackgroundWorker_Destroy(BackgroundWorker* worker);
 
-static inline bool BackgroundWorker_Continue(BackgroundWorker* worker) { 
-    return (worker) ? (WaitForSingleObject(worker->eventCancel, 0) != WAIT_OBJECT_0) : false;
+static inline bool BackgroundWorker_Continue(BackgroundWorker* worker) {
+    return (worker && IS_VALID_HANDLE(worker->eventCancel)) ? (WaitForSingleObject(worker->eventCancel, 0) != WAIT_OBJECT_0) : false;
 }
 static inline void BackgroundWorker_End(BackgroundWorker* worker, unsigned int retcode) { if (worker) { _endthreadex(retcode); }}
 
@@ -480,16 +486,24 @@ bool ReadFileXL(HANDLE hFile, char* const lpBuffer, const size_t nNumberOfBytesT
 bool WriteFileXL(HANDLE hFile, const char* const lpBuffer, const size_t nNumberOfBytesToWrite, size_t* const lpNumberOfBytesWritten);
 
 bool  SplitFilePathLineNum(LPWSTR lpszPath, int *lineNum);
+bool  SplitFilePathLineColNum(LPWSTR lpszPath, int *lineNum, int *colNum);
+
+HSTRINGW ExtractSelectionOrTokenAtCaret(void);
+bool  ResolveSelectionToPath(LPCWSTR token, HPATHL hpthOut, bool *isDir);
+void  Path_CanonicalizeWithDocAnchor(HPATHL hpth);
 
 bool StrLTrimI(LPWSTR pszSource,LPCWSTR pszTrimChars);
 bool StrRTrimI(LPWSTR pszSource,LPCWSTR pszTrimChars);
+
+bool StrTrimUTF8(LPSTR psz, LPCSTR pszTrimChars);
+char* StrStrIA_UTF8(const char* pszSource, const char* pszSub);
 
 static inline bool TrimSpcA(LPSTR lpString)
 {
     if (!lpString || !*lpString) {
         return false;
     }
-    return (bool)StrTrimA(lpString, " \t\v");
+    return StrTrimUTF8(lpString, " \t\v");
 };
 
 static inline bool TrimSpcW(LPWSTR lpString)
@@ -631,22 +645,12 @@ static inline void SwabEx(char* src, char* dest, size_t n)
 //==== StrCut methods ===================
 
 WCHAR* StrCutIW(WCHAR* s, const WCHAR* pattern);
-CHAR*  StrCutIA(CHAR* s, const CHAR* pattern);
-#if defined(UNICODE) || defined(_UNICODE)
 #define StrCutI StrCutIW
-#else
-#define StrCutI _StrCutIA
-#endif
 
 
 //==== StrNextTok methods ===================
 WCHAR* StrNextTokW(WCHAR* strg, const WCHAR* tokens);
-CHAR*  StrNextTokA(CHAR* strg, const CHAR* tokens);
-#if defined(UNICODE) || defined(_UNICODE)
 #define StrNextTok StrNextTokW
-#else
-#define StrNextTok StrNextTokA
-#endif
 
 // ----------------------------------------------------------------------------
 
@@ -850,7 +854,7 @@ int Hex2Char(char* ch, int cnt);
 
 size_t SimpleHash(LPCWSTR string);
 
-    void CloseNonModalDialogs();
+void CloseNonModalDialogs();
 void CloseApplication();
 
 // ----------------------------------------------------------------------------
@@ -894,7 +898,7 @@ __forceinline bool IsCursorVisible()
 __forceinline bool IsMouseVanish()
 {
     BOOL bMouseVanish = FALSE;
-    return SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &bMouseVanish, 0) ? bMouseVanish : false;
+    return SystemParametersInfo(SPI_GETMOUSEVANISH, 0, &bMouseVanish, 0) ? bMouseVanish : false;
 }
 
 // ----------------------------------------------------------------------------

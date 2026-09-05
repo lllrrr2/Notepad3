@@ -101,6 +101,7 @@ BEGIN
     IDS_LEX_REG_FILES       "登錄檔"
     IDS_LEX_VHDL            "VHDL"
     IDS_LEX_JSON            "JSON"
+    IDS_LEX_JSON5           "JSON5"
     IDS_LEX_NSIS            "NSIS"
     IDS_LEX_INNO            "Inno 安裝指令稿"
     IDS_LEX_RUBY            "Ruby 指令稿"
@@ -109,6 +110,7 @@ BEGIN
     IDS_LEX_AUTOIT3         "AutoIt3 指令稿"
     IDS_LEX_LATEX           "LaTeX 檔案"
     IDS_LEX_AHK             "AutoHotkey 指令稿"
+    IDS_LEX_AHK2            "AutoHotkey v2 Script"
     IDS_LEX_CMAKE           "CMake 指令稿"
     IDS_LEX_AVI_SYNTH       "AviSynth 指令稿"
 END
@@ -136,6 +138,7 @@ STRINGTABLE
 BEGIN
     IDS_LEX_VERILOG         "Verilog HDL"
     IDS_LEX_SYSVERILOG      "SystemVerilog HDVL"
+    IDS_LEX_ABAQUS          "ABAQUS"
 END
 
 STRINGTABLE
@@ -153,7 +156,7 @@ BEGIN
     IDS_LEX_STD_SEL         "選取的文字 (顏色)"
     IDS_LEX_STD_WSPC        "空白字元 (顏色, 大小 1-12)"
     IDS_LEX_STD_LN_BACKGR   "高亮目前行"
-    IDS_LEX_STD_CARET       "插入點 (顏色, 大小 1-3)"
+    IDS_LEX_STD_CARET       "插入點 (顏色, 大小 1-20)"
     IDS_LEX_STD_LONG_LN     "長行標記 (顏色)"
     IDS_LEX_STD_X_SPC       "額外的行間距 (大小)"
     IDS_LEX_2ND_STYLE       "第二預設樣式"
@@ -168,8 +171,14 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_LEX_STD_NPCH        "不可列印字元 (顏色)"
+    IDS_LEX_2ND_NPCH        "第二不可列印字元 (顏色)"
+END
+
+STRINGTABLE
+BEGIN
     IDS_LEX_2ND_LN_BACKGR   "第二高亮目前行"
-    IDS_LEX_2ND_CARET       "第二插入點 (顏色, 大小 1-3)"
+    IDS_LEX_2ND_CARET       "第二插入點 (顏色, 大小 1-20)"
     IDS_LEX_2ND_LONG_LN     "第二長行標記 (顏色)"
     IDS_LEX_2ND_X_SPC       "第二額外的行間距 (大小)"
     IDS_LEX_STD_BKMRK       "書籤和摺疊 (顏色, 大小)"
@@ -504,7 +513,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_LEX_STR_StrgEOL     "String EOL"
+    IDS_LEX_STR_StrgEOL     "字串換行"
     IDS_LEX_STR_Backticks   "反引號"
     IDS_LEX_STR_GUIDStrg    "GUID 字串"
     IDS_LEX_STR_Global      "全域"
@@ -514,7 +523,52 @@ BEGIN
     IDS_LEX_STR_PortConn    "埠連結"
     IDS_LEX_STR_SysTasks    "系統任務"
     IDS_LEX_STR_AfterLabel  "在標籤後"
-    IDS_LEX_STR_Table       "Table"
+    IDS_LEX_STR_Table       "表"
+    IDS_LEX_STR_StarCmd     "星號命令"
+    IDS_LEX_STR_SlashCmd    "斜線命令"
+    IDS_LEX_STR_Processor   "處理器"
+    IDS_LEX_STR_Argument    "參數"
+    IDS_LEX_STR_SGMLCmd     "SGML 命令"
+    IDS_LEX_STR_SGMLParam   "SGML 首參數"
+    IDS_LEX_STR_SGMLStr     "SGML 字串"
+    IDS_LEX_STR_SGMLErr     "SGML 錯誤"
+    IDS_LEX_STR_SGMLSpc     "SGML 特殊符號"
+    IDS_LEX_STR_SGMLEnt     "SGML 實體"
+    IDS_LEX_STR_SGMLCmt     "SGML 註解"
+    IDS_LEX_STR_SGMLBlk     "SGML 區塊預設"
+    IDS_LEX_STR_AU3Expand   "展開變數"
+    IDS_LEX_STR_COMObj      "COM 物件"
+    IDS_LEX_STR_DocCmt      "文件註解"
+    IDS_LEX_STR_InstProp    "實例屬性"
+    IDS_LEX_STR_UserLit     "使用者字面值"
+    IDS_LEX_STR_HdrText     "標題文字"
+    IDS_LEX_STR_PerlXlat    "字元轉譯 tr///"
+    IDS_LEX_STR_PerlIVRx    "內插變數（規則運算式/反引號）"
+    IDS_LEX_STR_PerlIVQQ    "內插變數（qq/qx/here）"
+    IDS_LEX_STR_HereStr     "Here 字串"
+    IDS_LEX_STR_RbHereDoc   "Here-Doc"
+    IDS_LEX_STR_RbPctStr    "% 字串"
+    IDS_LEX_STR_RbPctWord   "% 詞/符號列表"
+    IDS_LEX_STR_RbDemoted   "降級關鍵字"
+    IDS_LEX_STR_RbStdStream "標準串流"
+    IDS_LEX_STR_CStr        "C 字串"
+    IDS_LEX_STR_QOper       "引號運算子"
+    IDS_LEX_STR_TclExpand   "展開 {*}"
+    IDS_LEX_STR_Keyword47   "關鍵字 4-7"
+    IDS_LEX_STR_Keyword8    "關鍵字 8"
+    IDS_LEX_STR_MacroDef    "巨集定義"
+    IDS_LEX_STR_Macro       "巨集"
+    IDS_LEX_STR_Typedef     "類型定義"
+    IDS_LEX_STR_Class       "類別"
+    IDS_LEX_STR_Verbatim    "原樣"
+    IDS_LEX_STR_Escape      "跳脫"
+    IDS_LEX_STR_ParamExp    "參數展開"
+    IDS_LEX_STR_SyntaxOp    "語法運算子"
+    IDS_LEX_STR_IfDef       "If 定義"
+    IDS_LEX_STR_WhileDef    "While 定義"
+    IDS_LEX_STR_ForEachDef  "For Each 定義"
+    IDS_LEX_STR_DocCmtKw    "文件註解關鍵字"
+    IDS_LEX_STR_UserDef     "使用者定義"
 END
 
 STRINGTABLE

@@ -1,4 +1,4 @@
-/******************************************************************
+ /******************************************************************
  *  LexMarkdown.cxx
  *
  *  A simple Markdown lexer for scintilla.
@@ -34,11 +34,11 @@
  *
  *****************************************************************/
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cassert>
+#include <cstring>
+#include <cstdio>
+#include <cstdarg>
 
 #include <string>
 #include <string_view>
@@ -63,11 +63,9 @@ constexpr bool IsNewline(const int ch) {
     return (ch == '\n' || ch == '\r' || ch == '\0');
 }
 
-}
-
 // True if can follow ch down to the end with possibly trailing whitespace
 // Does not set the state SCE_MARKDOWN_LINE_BEGIN as to allow further processing
-static bool FollowToLineEnd(const int ch, const int state, const Sci_PositionU endPos, StyleContext &sc) {
+bool FollowToLineEnd(const int ch, const int state, const Sci_PositionU endPos, StyleContext &sc) {
     Sci_Position i = 0;
     while (sc.GetRelative(++i) == ch)
         ;
@@ -79,12 +77,12 @@ static bool FollowToLineEnd(const int ch, const int state, const Sci_PositionU e
         sc.Forward(i);
         return true;
     }
-    else return false;
+    return false;
 }
 
 // Set the state on text section from current to length characters,
 // then set the rest until the newline to default, except for any characters matching token
-static void SetStateAndZoom(const int state, const Sci_Position length, const int token, StyleContext &sc) {
+void SetStateAndZoom(const int state, const Sci_Position length, const int token, StyleContext &sc) {
     sc.SetState(state);
     sc.Forward(length);
     sc.SetState(SCE_MARKDOWN_DEFAULT);
@@ -105,7 +103,7 @@ static void SetStateAndZoom(const int state, const Sci_Position length, const in
 }
 
 // Does the previous line have more than spaces and tabs?
-static bool HasPrevLineContent(StyleContext &sc) {
+bool HasPrevLineContent(StyleContext &sc) {
     Sci_Position i = 0;
     // Go back to the previous newline
     while ((--i + (Sci_Position)sc.currentPos) >= 0 && !IsNewline(sc.GetRelative(i)))
@@ -120,11 +118,25 @@ static bool HasPrevLineContent(StyleContext &sc) {
     return false;
 }
 
-static bool AtTermStart(StyleContext &sc) {
-    return sc.currentPos == 0 || sc.chPrev == 0 || isspacechar(sc.chPrev);
+bool AtTermStart(const StyleContext &sc) noexcept {
+    if (sc.currentPos == 0 || sc.chPrev == 0 || isspacechar(sc.chPrev))
+        return true;
+    // NP3 patch: also accept common opening punctuation so inline spans
+    // (code, strong, emphasis, strikeout) can open directly after them,
+    // e.g. (`x`), [`x`], {`x`}, <`x`>, "`x`", '`x`'. CommonMark and VS
+    // Code accept these — code spans have no left-flank restriction at
+    // all, and emphasis after opening punctuation is a valid
+    // left-flanking delimiter run.
+    switch (sc.chPrev) {
+    case '(': case '[': case '{': case '<':
+    case '"': case '\'':
+        return true;
+    default:
+        return false;
+    }
 }
 
-static bool IsCompleteStyleRegion(StyleContext &sc, const char *token) {
+bool IsCompleteStyleRegion(StyleContext &sc, const char *token) {
     bool found = false;
     const size_t start = strlen(token);
     Sci_Position i = static_cast<Sci_Position>(start);
@@ -140,12 +152,12 @@ static bool IsCompleteStyleRegion(StyleContext &sc, const char *token) {
     return AtTermStart(sc) && found;
 }
 
-static bool IsValidHrule(const Sci_PositionU endPos, StyleContext &sc) {
+bool IsValidHrule(const Sci_PositionU endPos, StyleContext &sc) {
     int count = 1;
     Sci_Position i = 0;
     for (;;) {
         ++i;
-        int c = sc.GetRelative(i);
+        const int c = sc.GetRelative(i);
         if (c == sc.ch)
             ++count;
         // hit a terminating character
@@ -158,17 +170,15 @@ static bool IsValidHrule(const Sci_PositionU endPos, StyleContext &sc) {
                 sc.SetState(SCE_MARKDOWN_LINE_BEGIN);
                 return true;
             }
-            else {
-                sc.SetState(SCE_MARKDOWN_DEFAULT);
-                return false;
-            }
+            sc.SetState(SCE_MARKDOWN_DEFAULT);
+            return false;
         }
     }
 }
 
-static void ColorizeMarkdownDoc(Sci_PositionU startPos, Sci_Position length, int initStyle,
+void ColorizeMarkdownDoc(Sci_PositionU startPos, Sci_Position length, int initStyle,
                                 WordList **, Accessor &styler) {
-    Sci_PositionU endPos = startPos + length;
+    const Sci_PositionU endPos = startPos + length;
     int precharCount = 0;
     bool isLinkNameDetecting = false;
     // Don't advance on a new loop iteration and retry at the same position.
@@ -178,7 +188,7 @@ static void ColorizeMarkdownDoc(Sci_PositionU startPos, Sci_Position length, int
 
     // property lexer.markdown.header.eolfill
     //  Set to 1 to highlight all ATX header text.
-    bool headerEOLFill = styler.GetPropertyInt("lexer.markdown.header.eolfill", 0) == 1;
+    const bool headerEOLFill = styler.GetPropertyInt("lexer.markdown.header.eolfill", 0) == 1;
 
     StyleContext sc(startPos, static_cast<Sci_PositionU>(length), initStyle, styler);
 
@@ -481,6 +491,8 @@ static void ColorizeMarkdownDoc(Sci_PositionU startPos, Sci_Position length, int
         freezeCursor = false;
     }
     sc.Complete();
+}
+
 }
 
 extern const LexerModule lmMarkdown(SCLEX_MARKDOWN, ColorizeMarkdownDoc, "markdown");

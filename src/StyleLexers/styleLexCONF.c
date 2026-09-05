@@ -118,7 +118,8 @@ KEYWORDLIST KeyWords_CONF =
     "vhostsecure vhostuser virtualdocumentroot virtualdocumentrootip virtualhost virtualscriptalias "
     "virtualscriptaliasip watchdoginterval win32disableacceptex xbithack xml2encalias xml2encdefault "
     "xml2startparse",
-    "",
+    ""
+    " downgrade-1.0 followsymlinks force-response-1.0 includes indexes inetd nokeepalive none off on standalone x-compress x-gzip",
 // "downgrade-1.0 followsymlinks force-response-1.0 includes indexes inetd nokeepalive none off on "
 // "standalone x-compress x-gzip",
     NULL,
@@ -127,7 +128,7 @@ KEYWORDLIST KeyWords_CONF =
 
 EDITLEXER lexCONF =
 {
-    SCLEX_CONF, "conf", IDS_LEX_APC_CFG, L"Apache Config Files", L"conf; cfg; cnf; htaccess; prefs; iface; prop; po; te; \\^Kconfig$; \\^Doxyfile$", L"",
+    SCLEX_CONF, "conf", IDS_LEX_APC_CFG, L"Apache Config Files", L"conf; cfg; cnf; htaccess; prefs; iface; prop; po; te; Kconfig*; Doxyfile*", L"",
     &KeyWords_CONF, {
         { {STYLE_DEFAULT}, IDS_LEX_STR_Default, L"Default", L"", L"" },
         //{ {SCE_CONF_DEFAULT}, IDS_LEX_STR_Default, L"Default", L"", L"" },

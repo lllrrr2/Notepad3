@@ -563,9 +563,11 @@ void ScintillaCall::StyleSetUnderline(int style, bool underline) {
 	Call(Message::StyleSetUnderline, style, underline);
 }
 
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 void ScintillaCall::StyleSetStrike(int style, bool strike) {
 	Call(Message::StyleSetStrike, style, strike);
 }
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 
 Colour ScintillaCall::StyleGetFore(int style) {
 	return static_cast<Colour>(Call(Message::StyleGetFore, style));
@@ -603,9 +605,11 @@ bool ScintillaCall::StyleGetUnderline(int style) {
 	return Call(Message::StyleGetUnderline, style);
 }
 
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 bool ScintillaCall::StyleGetStrike(int style) {
 	return Call(Message::StyleGetStrike, style);
 }
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 
 CaseVisible ScintillaCall::StyleGetCase(int style) {
 	return static_cast<Scintilla::CaseVisible>(Call(Message::StyleGetCase, style));
@@ -3399,6 +3403,14 @@ Position ScintillaCall::IndexPositionFromLine(Line line, Scintilla::LineCharacte
 	return Call(Message::IndexPositionFromLine, line, static_cast<intptr_t>(lineCharacterIndex));
 }
 
+bool ScintillaCall::DragDropEnabled() {
+	return Call(Message::GetDragDropEnabled);
+}
+
+void ScintillaCall::SetDragDropEnabled(bool dragDropEnabled) {
+	Call(Message::SetDragDropEnabled, dragDropEnabled);
+}
+
 void ScintillaCall::StartRecord() {
 	Call(Message::StartRecord);
 }
@@ -3557,6 +3569,14 @@ std::string ScintillaCall::DescriptionOfStyle(int style) {
 
 void ScintillaCall::SetILexer(void *ilexer) {
 	CallPointer(Message::SetILexer, 0, ilexer);
+}
+
+void ScintillaCall::SetScaleTechnique(Scintilla::ScaleTechnique technique) {
+	Call(Message::SetScaleTechnique, static_cast<uintptr_t>(technique));
+}
+
+ScaleTechnique ScintillaCall::ScaleTechnique() {
+	return static_cast<Scintilla::ScaleTechnique>(Call(Message::GetScaleTechnique));
 }
 
 Bidirectional ScintillaCall::Bidirectional() {

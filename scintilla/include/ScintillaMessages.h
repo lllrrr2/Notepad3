@@ -115,7 +115,9 @@ enum class Message {
 	StyleSetEOLFilled = 2057,
 	StyleResetDefault = 2058,
 	StyleSetUnderline = 2059,
+	// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 	StyleSetStrike = 6001,
+	// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 	StyleGetFore = 2481,
 	StyleGetBack = 2482,
 	StyleGetBold = 2483,
@@ -124,7 +126,9 @@ enum class Message {
 	StyleGetFont = 2486,
 	StyleGetEOLFilled = 2487,
 	StyleGetUnderline = 2488,
+	// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 	StyleGetStrike = 6002,
+	// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 	StyleGetCase = 2489,
 	StyleGetCharacterSet = 2490,
 	StyleGetVisible = 2491,
@@ -801,6 +805,8 @@ enum class Message {
 	ReleaseLineCharacterIndex = 2712,
 	LineFromIndexPosition = 2713,
 	IndexPositionFromLine = 2714,
+	GetDragDropEnabled = 2818,
+	SetDragDropEnabled = 2819,
 	StartRecord = 3001,
 	StopRecord = 3002,
 	GetLexer = 4002,
@@ -831,6 +837,8 @@ enum class Message {
 	TagsOfStyle = 4031,
 	DescriptionOfStyle = 4032,
 	SetILexer = 4033,
+	SetScaleTechnique = 2820,
+	GetScaleTechnique = 2821,
 	GetBidirectional = 2708,
 	SetBidirectional = 2709,
 };

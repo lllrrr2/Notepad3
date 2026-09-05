@@ -16,6 +16,7 @@
 
 #include <stdexcept>
 #include <new>
+#include <utility>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -33,11 +34,9 @@
 #define NOMINMAX
 #endif
 #undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601  /*_WIN32_WINNT_WIN7*/
-//~#define _WIN32_WINNT 0x0A00  /*_WIN32_WINNT_WINTHRESHOLD, _WIN32_WINNT_WIN10*/
+#define _WIN32_WINNT 0x0A00
 #undef WINVER
-#define WINVER 0x0601  /*_WIN32_WINNT_WIN7*/
-//~#define WINVER 0x0A00  /*_WIN32_WINNT_WINTHRESHOLD, _WIN32_WINNT_WIN10*/
+#define WINVER 0x0A00
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 #include <commctrl.h>
@@ -153,8 +152,8 @@ constexpr Point PointFromLParam(sptr_t lpoint) noexcept {
 	return Point::FromInts(GET_X_LPARAM(lpoint), GET_Y_LPARAM(lpoint));
 }
 
-inline bool KeyboardIsKeyDown(int key) noexcept {
-	return (::GetKeyState(key) & 0x8000) != 0;
+bool KeyboardIsKeyDown(int key) noexcept {
+	return ::GetKeyState(key) < 0;
 }
 
 // Bit 24 is the extended keyboard flag and the numeric keypad is non-extended
@@ -335,12 +334,9 @@ public:
 
 	void SetCompositionFont(const ViewStyle &vs, int style, UINT dpi) const {
 		LOGFONTW lf{};
-		// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
-		//int sizeZoomed = vs.styles[style].size + (vs.zoomLevel * FontSizeMultiplier);
-		//if (sizeZoomed <= 2 * FontSizeMultiplier)	// Hangs if sizeZoomed <= 1
-		//	sizeZoomed = 2 * FontSizeMultiplier;
-		int const sizeZoomed = GetFontSizeZoomed(vs.styles[style].size, vs.zoomLevel);
-		// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
+		// Hangs if font height <= 1, so force minimum value
+		const int sizeZoomed = std::max(vs.styles[style].size + (vs.zoomLevel * FontSizeMultiplier),
+			2 * FontSizeMultiplier);
 		// The negative is to allow for leading
 		lf.lfHeight = -::MulDiv(sizeZoomed, dpi, pointsPerInch * FontSizeMultiplier);
 		lf.lfWeight = static_cast<LONG>(vs.styles[style].weight);
@@ -411,7 +407,8 @@ CLIPFORMAT RegisterClipboardType(LPCWSTR lpszFormat) noexcept {
 	// Registered clipboard format values are 0xC000 through 0xFFFF.
 	// RegisterClipboardFormatW returns 32-bit unsigned and CLIPFORMAT is 16-bit
 	// unsigned so choose the low 16-bits with &.
-	return ::RegisterClipboardFormatW(lpszFormat) & 0xFFFF;
+	constexpr CLIPFORMAT LowBits = 0xFFFF;
+	return ::RegisterClipboardFormatW(lpszFormat) & LowBits;
 }
 
 RECT GetClientRect(HWND hwnd) noexcept {
@@ -577,18 +574,18 @@ class ScintillaWin :
 		    sptr_t ptr, UINT iMessage, uptr_t wParam, sptr_t lParam);
 	static sptr_t DirectStatusFunction(
 		    sptr_t ptr, UINT iMessage, uptr_t wParam, sptr_t lParam, int *pStatus);
-	static LRESULT PASCAL SWndProc(
+	static LRESULT CALLBACK SWndProc(
 		    HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 	void CTPaint(HWND hWnd);
 	LRESULT CTProcessMessage(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
-	static LRESULT PASCAL CTWndProc(
+	static LRESULT CALLBACK CTWndProc(
 		    HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 	enum : UINT_PTR { invalidTimerID, standardTimerID, idleTimerID, fineTimerStart };
 
 	void DisplayCursor(Window::Cursor c) override;
-	bool DragThreshold(Point ptStart, Point ptNow) noexcept override;
+	bool DragThreshold(Point ptStart, Point ptNow) override;
 	void StartDrag() override;
 	static KeyMod MouseModifiers(uptr_t wParam) noexcept;
 
@@ -621,19 +618,19 @@ class ScintillaWin :
 
 	std::string EncodeWString(std::wstring_view wsv);
 	sptr_t DefWndProc(Message iMessage, uptr_t wParam, sptr_t lParam) override;
-	void IdleWork() override;
-	void QueueIdleWork(WorkItems items, Sci::Position upTo) override;
-	bool SetIdle(bool on) override;
 	UINT_PTR timers[static_cast<int>(TickReason::dwell)+1] {};
 	bool FineTickerRunning(TickReason reason) override;
 	void FineTickerStart(TickReason reason, int millis, int tolerance) override;
 	void FineTickerCancel(TickReason reason) override;
+	bool SetIdle(bool on) override;
+	void IdleWork() override;
+	void QueueIdleWork(WorkItems items, Sci::Position upTo) override;
 	void SetMouseCapture(bool on) override;
 	bool HaveMouseCapture() override;
 	void SetTrackMouseLeaveEvent(bool on) noexcept;
 	void HideCursorIfPreferred() noexcept;
 	void UpdateBaseElements() override;
-	bool PaintContains(PRectangle rc) const noexcept override;
+	bool PaintContains(PRectangle rc) override;
 	void ScrollText(Sci::Line linesToMove) override;
 	void NotifyCaretMove() override;
 	void UpdateSystemCaret() override;
@@ -645,7 +642,7 @@ class ScintillaWin :
 	void NotifyChange() override;
 	void NotifyFocus(bool focus) override;
 	void SetCtrlID(int identifier) override;
-	int GetCtrlID() const noexcept override;
+	int GetCtrlID() override;
 	void NotifyParent(NotificationData scn) override;
 	void NotifyDoubleClick(Point pt, KeyMod modifiers) override;
 	std::unique_ptr<CaseFolder> CaseFolderForEncoding() override;
@@ -869,7 +866,9 @@ bool ScintillaWin::UpdateRenderingParams(bool force) noexcept {
 	UINT clearTypeContrast = 0;
 	if (SUCCEEDED(hr) && monitorRenderingParams &&
 		::SystemParametersInfo(SPI_GETFONTSMOOTHINGCONTRAST, 0, &clearTypeContrast, 0) != 0) {
-		if (clearTypeContrast >= 1000 && clearTypeContrast <= 2200) {
+		constexpr UINT minContrast = 1000;
+		constexpr UINT maxContrast = 2200;
+		if (clearTypeContrast >= minContrast && clearTypeContrast <= maxContrast) {
 			const FLOAT gamma = static_cast<FLOAT>(clearTypeContrast) / 1000.0f;
 			pIDWriteFactory->CreateCustomRenderingParams(gamma,
 				monitorRenderingParams->GetEnhancedContrast(),
@@ -882,7 +881,11 @@ bool ScintillaWin::UpdateRenderingParams(bool force) noexcept {
 	}
 
 	hCurrentMonitor = monitor;
-	deviceScaleFactor = Internal::GetDeviceScaleFactorWhenGdiScalingActive(hRootWnd);
+	const float newDeviceScaleFactor = Internal::GetDeviceScaleFactorWhenGdiScalingActive(hRootWnd);
+	if (deviceScaleFactor != newDeviceScaleFactor) {
+		deviceScaleFactor = newDeviceScaleFactor;
+		targets.valid = false;
+	}
 	renderingParams->defaultRenderingParams = std::move(monitorRenderingParams);
 	renderingParams->customRenderingParams = std::move(customClearTypeRenderingParams);
 	return true;
@@ -1081,7 +1084,7 @@ void ScintillaWin::DisplayCursor(Window::Cursor c) {
 	}
 }
 
-bool ScintillaWin::DragThreshold(Point ptStart, Point ptNow) noexcept {
+bool ScintillaWin::DragThreshold(Point ptStart, Point ptNow) {
 	const Point ptDifference = ptStart - ptNow;
 	const XYPOSITION xMove = std::trunc(std::abs(ptDifference.x));
 	const XYPOSITION yMove = std::trunc(std::abs(ptDifference.y));
@@ -1125,7 +1128,8 @@ namespace {
 int InputCodePage() noexcept {
 	HKL inputLocale = ::GetKeyboardLayout(0);
 	const LANGID inputLang = LOWORD(inputLocale);
-	char sCodePage[10];
+	constexpr size_t lengthCodePage = 10;
+	char sCodePage[lengthCodePage];
 	const int res = ::GetLocaleInfoA(MAKELCID(inputLang, SORT_DEFAULT),
 	  LOCALE_IDEFAULTANSICODEPAGE, sCodePage, sizeof(sCodePage));
 	if (!res)
@@ -1416,7 +1420,7 @@ void ScintillaWin::SelectionToHangul() {
 			const std::string hangul = StringEncode(uniStr, CodePageOfDocument());
 			UndoGroup ug(pdoc);
 			ClearSelection();
-			InsertPaste(hangul.data(), hangul.size());
+			InsertPaste(hangul);
 		}
 	}
 }
@@ -1763,7 +1767,7 @@ Window::Cursor ScintillaWin::ContextCursor(Point pt) {
 	// Display regular (drag) cursor over selection
 	if (PointInSelMargin(pt)) {
 		return GetMarginCursor(pt);
-	} else if (!SelectionEmpty() && PointInSelection(pt)) {
+	} else if (dragDropEnabled && !SelectionEmpty() && PointInSelection(pt)) {
 		return Window::Cursor::arrow;
 	} else if (PointIsHotspot(pt)) {
 		return Window::Cursor::hand;
@@ -1883,10 +1887,14 @@ sptr_t ScintillaWin::MouseMessage(unsigned int iMessage, uptr_t wParam, sptr_t l
 
 			// Windows might send WM_MOUSEMOVE even though the mouse has not been moved:
 			// http://blogs.msdn.com/b/oldnewthing/archive/2003/10/01/55108.aspx
+			// Only a *real* movement (position actually changed) reveals a pointer
+			// hidden while typing. Spurious moves (Windows synthesizes WM_MOUSEMOVE
+			// when a popup/statusbar repaints under a stationary pointer) must NOT
+			// reveal it, otherwise the pointer flickers while typing (issue #4942).
 			if (ptMouseLast != pt) {
 				if (cursorIsHidden) {
-					::ShowCursor(TRUE);
-					cursorIsHidden = false; // to be shown by ButtonMoveWithModifiers
+					cursorIsHidden = false;
+					DisplayCursor(ContextCursor(pt));
 				}
 				SetTrackMouseLeaveEvent(true);
 				ButtonMoveWithModifiers(pt, ::GetMessageTime(), MouseModifiers(wParam));
@@ -1897,8 +1905,9 @@ sptr_t ScintillaWin::MouseMessage(unsigned int iMessage, uptr_t wParam, sptr_t l
 
 	case WM_MOUSELEAVE:
 		// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
+		// Pointer left the edit client: drop the "hidden while typing" state so
+		// the normal pointer is shown again (nothing to restore, SetCursor-scoped).
 		if (cursorIsHidden) {
-			::ShowCursor(TRUE);
 			cursorIsHidden = false;
 		}
 		// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
@@ -1957,15 +1966,7 @@ sptr_t ScintillaWin::MouseMessage(unsigned int iMessage, uptr_t wParam, sptr_t l
 
 			// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 			if (wParam & (MK_CONTROL | MK_RBUTTON)) {
-				if (wParam & (MK_CONTROL)) {
-				// Zoom! We play with the font sizes in the styles.
-				// Number of steps/line is ignored, we just care if sizing up or down
-					if (linesToScroll < 0)
-						KeyCommand(Message::ZoomIn);
-					else
-						KeyCommand(Message::ZoomOut);
-				}
-				// send to main window (trigger zoom callTip or undo/redo history) !
+				// Forward to parent (NP3 handles zoom steps and undo/redo history)
 				::DefWindowProc(MainHWND(), iMessage, wParam, lParam);
 			} else {
 				// Scroll
@@ -2068,8 +2069,11 @@ sptr_t ScintillaWin::FocusMessage(unsigned int iMessage, uptr_t wParam, sptr_t) 
 	switch (iMessage) {
 	case WM_KILLFOCUS: {
 		// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
+		// Losing focus while typing: drop the "hidden while typing" state. The
+		// system does not send WM_MOUSELEAVE when the pointer is not above this
+		// window, so this is the recovery point for that case (nothing to
+		// restore, hiding is SetCursor-scoped, not ShowCursor()-counter based).
 		if (cursorIsHidden) {
-			::ShowCursor(TRUE);
 			cursorIsHidden = false;
 		}
 		// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
@@ -2408,13 +2412,24 @@ sptr_t ScintillaWin::WndProc(Message iMessage, uptr_t wParam, sptr_t lParam) {
 
 		case WM_SETCURSOR:
 			if (LOWORD(lParam) == HTCLIENT) {
-				if (!cursorIsHidden) {
+				// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
+				// "Hide pointer while typing" (SPI_GETMOUSEVANISH) is scoped to the
+				// edit client only. While hidden, re-assert the empty cursor here so
+				// it stays hidden over the text area during typing WITHOUT using the
+				// process-wide ShowCursor() counter. ShowCursor() is per input-queue
+				// and thus shared by the toolbar / statusbar / scrollbars / margins,
+				// which would then also blank the pointer until it happens to re-enter
+				// the text area ("pointer invisible for a while" on re-entry).
+				if (cursorIsHidden) {
+					::SetCursor(nullptr);
+				} else {
 					POINT pt;
 					if (::GetCursorPos(&pt)) {
 						::ScreenToClient(MainHWND(), &pt);
 						DisplayCursor(ContextCursor(PointFromPOINT(pt)));
 					}
 				}
+				// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 				return TRUE;
 			} else {
 				return ::DefWindowProc(MainHWND(), msg, wParam, lParam);
@@ -2459,7 +2474,9 @@ sptr_t ScintillaWin::WndProc(Message iMessage, uptr_t wParam, sptr_t lParam) {
 			InvalidateStyleRedraw();
 			break;
 
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 #if(WINVER >= 0x0605)
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 		case WM_DPICHANGED_AFTERPARENT: {
 				const UINT dpiNow = DpiForWindow(wMain.GetID());
 				if (dpi != dpiNow) {
@@ -2469,7 +2486,9 @@ sptr_t ScintillaWin::WndProc(Message iMessage, uptr_t wParam, sptr_t lParam) {
 				}
 			}
 			break;
+// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 #endif
+// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 
 		// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 		#if SCI_EnablePopupMenu
@@ -2501,17 +2520,18 @@ sptr_t ScintillaWin::WndProc(Message iMessage, uptr_t wParam, sptr_t lParam) {
 		case WM_MOUSEACTIVATE:
 		case WM_NCHITTEST:
 		case WM_NCCALCSIZE:
-		case WM_NCPAINT:
 		case WM_NCMOUSEMOVE:
 		case WM_NCLBUTTONDOWN:
 		case WM_SYSCOMMAND:
 		case WM_WINDOWPOSCHANGING:
 			return ::DefWindowProc(MainHWND(), msg, wParam, lParam);
 
+		case WM_NCPAINT:
 		case WM_WINDOWPOSCHANGED:
 #if defined(USE_D2D)
 			if (technology != Technology::Default) {
 				if (UpdateRenderingParams(false)) {
+					reverseArrowCursor.Invalidate();
 					DropGraphics();
 					Redraw();
 				}
@@ -2562,6 +2582,8 @@ sptr_t ScintillaWin::WndProc(Message iMessage, uptr_t wParam, sptr_t lParam) {
 		}
 	} catch (std::bad_alloc &) {
 		errorStatus = Status::BadAlloc;
+	} catch (const Failure &failure) {
+		errorStatus = failure.status;
 	} catch (...) {
 		errorStatus = Status::Failure;
 	}
@@ -2616,7 +2638,6 @@ void ScintillaWin::FineTickerCancel(TickReason reason) {
 		timers[reasonIndex] = 0;
 	}
 }
-
 
 bool ScintillaWin::SetIdle(bool on) {
 	// On Win32 the Idler is implemented as a Timer on the Scintilla window.  This
@@ -2683,8 +2704,12 @@ void ScintillaWin::HideCursorIfPreferred() noexcept {
 	// SPI_GETMOUSEVANISH from OS.
 	if (typingWithoutCursor && !cursorIsHidden) {
 		// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
-		//::SetCursor({});
-		::ShowCursor(FALSE);
+		// Hide the pointer for the edit client only. SetCursor(nullptr) is
+		// per-window/per-message (not the process-wide ShowCursor() counter),
+		// so the toolbar / statusbar / scrollbars / margins keep their normal
+		// pointer. WM_SETCURSOR re-asserts this while cursorIsHidden stays set,
+		// and a real WM_MOUSEMOVE clears it again (see MouseMessage()).
+		::SetCursor(nullptr);
 		// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 		cursorIsHidden = true;
 	}
@@ -2707,7 +2732,7 @@ void ScintillaWin::UpdateBaseElements() {
 	}
 }
 
-bool ScintillaWin::PaintContains(PRectangle rc) const noexcept {
+bool ScintillaWin::PaintContains(PRectangle rc) {
 	if (paintState == PaintState::painting) {
 		return BoundsContains(rcPaint, hRgnUpdate, rc);
 	}
@@ -2851,7 +2876,7 @@ void ScintillaWin::SetCtrlID(int identifier) {
 	::SetWindowID(HwndFromWindow(wMain), identifier);
 }
 
-int ScintillaWin::GetCtrlID() const noexcept {
+int ScintillaWin::GetCtrlID() {
 	return ::GetDlgCtrlID(HwndFromWindow(wMain));
 }
 
@@ -2887,10 +2912,10 @@ void CreateFoldMap(int codePage, FoldMap *foldingMap) {
 		if (DBCSIsLeadByte(codePage, ch1)) {
 			for (unsigned char byte2 = highByteLast; byte2 >= minTrailByte; byte2--) {
 				const char ch2 = byte2;
+				const DBCSPair pair{ ch1, ch2 };
+				const uint16_t index = DBCSIndex(ch1, ch2);
+				(*foldingMap)[index] = pair;
 				if (DBCSIsTrailByte(codePage, ch2)) {
-					const DBCSPair pair{ ch1, ch2 };
-					const uint16_t index = DBCSIndex(ch1, ch2);
-					(*foldingMap)[index] = pair;
 					const std::string_view svBytes(pair.chars, 2);
 					const int lenUni = WideCharLenFromMultiByte(codePage, svBytes);
 					if (lenUni == 1) {
@@ -2922,36 +2947,41 @@ void CreateFoldMap(int codePage, FoldMap *foldingMap) {
 class CaseFolderDBCS : public CaseFolderTable {
 	// Allocate the expandable storage here so that it does not need to be reallocated
 	// for each call to Fold.
-	const FoldMap *foldingMap;
-	UINT cp;
+	const FoldMap *foldingMap = nullptr;
+	UINT cp = 0;
 public:
 	explicit CaseFolderDBCS(UINT cp_) : cp(cp_) {
-		if (!DBCSHasFoldMap(cp)) {
-			CreateFoldMap(cp, DBCSGetMutableFoldMap(cp));
-		}
 		foldingMap = DBCSGetFoldMap(cp);
+		if (!foldingMap) {
+			FoldMap *pfm = DBCSCreateFoldMap(cp);
+			CreateFoldMap(cp, pfm);
+			foldingMap = pfm;
+		}
 	}
 	size_t Fold(char *folded, size_t sizeFolded, const char *mixed, size_t lenMixed) override;
 };
 
-size_t CaseFolderDBCS::Fold(char *folded, size_t sizeFolded, const char *mixed, size_t lenMixed) {
+size_t CaseFolderDBCS::Fold(char *folded, [[maybe_unused]] size_t sizeFolded, const char *mixed, size_t lenMixed) {
 	// This loop outputs the same length as input as for each char 1-byte -> 1-byte; 2-byte -> 2-byte
+	assert(lenMixed <= sizeFolded);
 	size_t lenOut = 0;
 	for (size_t i = 0; i < lenMixed; i++) {
-		const ptrdiff_t lenLeft = lenMixed - i;
 		const char ch = mixed[i];
-		if ((lenLeft >= 2) && DBCSIsLeadByte(cp, ch) && ((lenOut + 2) <= sizeFolded)) {
+		if (((i+1) < lenMixed) && DBCSIsLeadByte(cp, ch)) {
 			i++;
 			const char ch2 = mixed[i];
 			const uint16_t ind = DBCSIndex(ch, ch2);
 			const char *pair = foldingMap->at(ind).chars;
+			assert(pair[0]);
+			assert(pair[1]);
 			folded[lenOut++] = pair[0];
 			folded[lenOut++] = pair[1];
-		} else if ((lenOut + 1) <= sizeFolded) {
+		} else {
 			const unsigned char uch = ch;
 			folded[lenOut++] = mapping[uch];
 		}
 	}
+	assert(lenOut == lenMixed);
 	return lenOut;
 }
 
@@ -3132,32 +3162,44 @@ bool SupportedFormat(const FORMATETC *pFE) noexcept {
 }
 
 void ScintillaWin::Paste() {
-	Clipboard clipboard(MainHWND());
-	if (!clipboard) {
-		return;
-	}
-	UndoGroup ug(pdoc);
-	const bool isLine = SelectionEmpty() &&
-		(::IsClipboardFormatAvailable(cfLineSelect) || ::IsClipboardFormatAvailable(cfVSLineTag));
-	ClearSelection(multiPasteMode == MultiPaste::Each);
-	bool isRectangular = (::IsClipboardFormatAvailable(cfColumnSelect) != 0);
+	bool isLine = false;
+	bool isRectangular = false;
+	bool hasUnicodeText = false;
+	std::string putf;
 
-	if (!isRectangular) {
-		// Evaluate "Borland IDE Block Type" explicitly
-		GlobalMemory memBorlandSelection(::GetClipboardData(cfBorlandIDEBlockType));
-		if (memBorlandSelection) {
-			isRectangular = (memBorlandSelection.Size() == 1) && (static_cast<BYTE *>(memBorlandSelection.ptr)[0] == 0x02);
-			memBorlandSelection.Unlock();
+	{
+		Clipboard clipboard(MainHWND());
+		if (!clipboard) {
+			return;
+		}
+
+		isLine = SelectionEmpty() &&
+			(::IsClipboardFormatAvailable(cfLineSelect) || ::IsClipboardFormatAvailable(cfVSLineTag));
+		isRectangular = (::IsClipboardFormatAvailable(cfColumnSelect) != 0);
+
+		if (!isRectangular) {
+			// Evaluate "Borland IDE Block Type" explicitly
+			GlobalMemory memBorlandSelection(::GetClipboardData(cfBorlandIDEBlockType));
+			if (memBorlandSelection) {
+				isRectangular = (memBorlandSelection.Size() == 1) && (static_cast<BYTE *>(memBorlandSelection.ptr)[0] == 0x02);
+				memBorlandSelection.Unlock();
+			}
+		}
+
+		// Use CF_UNICODETEXT if available
+		GlobalMemory memUSelection(::GetClipboardData(CF_UNICODETEXT));
+		if (const wchar_t *uptr = static_cast<const wchar_t *>(memUSelection.ptr)) {
+			hasUnicodeText = true;
+			putf = EncodeWString(uptr);
+			memUSelection.Unlock();
 		}
 	}
-	const PasteShape pasteShape = isRectangular ? PasteShape::rectangular : (isLine ? PasteShape::line : PasteShape::stream);
 
-	// Use CF_UNICODETEXT if available
-	GlobalMemory memUSelection(::GetClipboardData(CF_UNICODETEXT));
-	if (const wchar_t *uptr = static_cast<const wchar_t *>(memUSelection.ptr)) {
-		const std::string putf = EncodeWString(uptr);
-		InsertPasteShape(putf.c_str(), putf.length(), pasteShape);
-		memUSelection.Unlock();
+	if (hasUnicodeText) {
+		UndoGroup ug(pdoc);
+		const PasteShape pasteShape = isRectangular ? PasteShape::rectangular : (isLine ? PasteShape::line : PasteShape::stream);
+		ClearSelection(multiPasteMode == MultiPaste::Each);
+		InsertPasteShape(putf, pasteShape);
 	}
 	Redraw();
 }
@@ -3580,7 +3622,7 @@ void ScintillaWin::GetMouseParameters() noexcept {
 }
 
 void ScintillaWin::CopyToGlobal(GlobalMemory &gmUnicode, const SelectionText &selectedText) {
-	const std::string_view svSelected(selectedText.Data(), selectedText.LengthWithTerminator());
+	const std::string_view svSelected = selectedText.AsViewWithTerminator();
 	if (IsUnicodeMode()) {
 		const size_t uchars = UTF16Length(svSelected);
 		gmUnicode.Allocate(2 * uchars);
@@ -3790,6 +3832,10 @@ STDMETHODIMP_(ULONG) ScintillaWin::Release() {
 /// Implement IDropTarget
 STDMETHODIMP ScintillaWin::DragEnter(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
                                      POINTL, PDWORD pdwEffect) {
+	if (!dragDropEnabled) {
+		*pdwEffect = DROPEFFECT_NONE;
+		return S_OK;
+	}
 	if (!pIDataSource )
 		return E_POINTER;
 	FORMATETC fmtu = {CF_UNICODETEXT, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
@@ -3806,7 +3852,7 @@ STDMETHODIMP ScintillaWin::DragEnter(LPDATAOBJECT pIDataSource, DWORD grfKeyStat
 
 STDMETHODIMP ScintillaWin::DragOver(DWORD grfKeyState, POINTL pt, PDWORD pdwEffect) {
 	try {
-		if (!hasOKText || pdoc->IsReadOnly()) {
+		if (!dragDropEnabled || !hasOKText || pdoc->IsReadOnly()) {
 			*pdwEffect = DROPEFFECT_NONE;
 			return S_OK;
 		}
@@ -3843,6 +3889,11 @@ STDMETHODIMP ScintillaWin::Drop(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
 	try {
 		*pdwEffect = EffectFromState(grfKeyState);
 
+		if (!dragDropEnabled) {
+			*pdwEffect = DROPEFFECT_NONE;
+			return S_OK;
+		}
+
 		if (!pIDataSource)
 			return E_POINTER;
 
@@ -3863,6 +3914,9 @@ STDMETHODIMP ScintillaWin::Drop(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
 			memUDrop.Unlock();
 		}
 
+		// Free data
+		::ReleaseStgMedium(&medium);
+
 		if (putf.empty()) {
 			return S_OK;
 		}
@@ -3874,10 +3928,7 @@ STDMETHODIMP ScintillaWin::Drop(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
 		::ScreenToClient(MainHWND(), &rpt);
 		const SelectionPosition movePos = SPositionFromLocation(PointFromPOINT(rpt), false, false, UserVirtualSpace());
 
-		DropAt(movePos, putf.c_str(), putf.size(), *pdwEffect == DROPEFFECT_MOVE, isRectangular);
-
-		// Free data
-		::ReleaseStgMedium(&medium);
+		DropAt(movePos, putf, *pdwEffect == DROPEFFECT_MOVE, isRectangular);
 
 		return S_OK;
 	} catch (...) {
@@ -4082,7 +4133,7 @@ LRESULT ScintillaWin::CTProcessMessage(HWND hWnd, UINT iMessage, WPARAM wParam, 
 	return ::DefWindowProc(hWnd, iMessage, wParam, lParam);
 }
 
-LRESULT PASCAL ScintillaWin::CTWndProc(
+LRESULT CALLBACK ScintillaWin::CTWndProc(
 	HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	// Find C++ object associated with window.
 	ScintillaWin *sciThis = static_cast<ScintillaWin *>(PointerFromWindow(hWnd));
@@ -4146,7 +4197,7 @@ sptr_t SCI_METHOD Scintilla_DirectStatusFunction(
 // <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 }
 
-LRESULT PASCAL ScintillaWin::SWndProc(
+LRESULT CALLBACK ScintillaWin::SWndProc(
 	HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	//Platform::DebugPrintf("S W:%x M:%x WP:%x L:%x\n", hWnd, iMessage, wParam, lParam);
 

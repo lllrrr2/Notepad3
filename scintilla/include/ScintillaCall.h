@@ -186,7 +186,9 @@ public:
 	void StyleSetEOLFilled(int style, bool eolFilled);
 	void StyleResetDefault();
 	void StyleSetUnderline(int style, bool underline);
+	// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 	void StyleSetStrike(int style, bool strike);
+	// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 	Colour StyleGetFore(int style);
 	Colour StyleGetBack(int style);
 	bool StyleGetBold(int style);
@@ -196,7 +198,9 @@ public:
 	std::string StyleGetFont(int style);
 	bool StyleGetEOLFilled(int style);
 	bool StyleGetUnderline(int style);
+	// >>>>>>>>>>>>>>>   BEG NON STD SCI PATCH   >>>>>>>>>>>>>>>
 	bool StyleGetStrike(int style);
+	// <<<<<<<<<<<<<<<   END NON STD SCI PATCH   <<<<<<<<<<<<<<<
 	Scintilla::CaseVisible StyleGetCase(int style);
 	Scintilla::CharacterSet StyleGetCharacterSet(int style);
 	bool StyleGetVisible(int style);
@@ -895,6 +899,8 @@ public:
 	void ReleaseLineCharacterIndex(Scintilla::LineCharacterIndexType lineCharacterIndex);
 	Line LineFromIndexPosition(Position pos, Scintilla::LineCharacterIndexType lineCharacterIndex);
 	Position IndexPositionFromLine(Line line, Scintilla::LineCharacterIndexType lineCharacterIndex);
+	bool DragDropEnabled();
+	void SetDragDropEnabled(bool dragDropEnabled);
 	void StartRecord();
 	void StopRecord();
 	int Lexer();
@@ -935,6 +941,8 @@ public:
 	int DescriptionOfStyle(int style, char *description);
 	std::string DescriptionOfStyle(int style);
 	void SetILexer(void *ilexer);
+	void SetScaleTechnique(Scintilla::ScaleTechnique technique);
+	Scintilla::ScaleTechnique ScaleTechnique();
 	Scintilla::Bidirectional Bidirectional();
 	void SetBidirectional(Scintilla::Bidirectional bidirectional);
 

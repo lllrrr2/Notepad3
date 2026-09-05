@@ -51,6 +51,9 @@
     <ClCompile Include="Edit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="EditRTF.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Helpers.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -141,6 +144,9 @@
     <ClCompile Include="StyleLexers\styleLexJSON.c">
       <Filter>Source Files\StyleLexers</Filter>
     </ClCompile>
+    <ClCompile Include="StyleLexers\styleLexJSON5.c">
+      <Filter>Source Files\StyleLexers</Filter>
+    </ClCompile>
     <ClCompile Include="StyleLexers\styleLexLUA.c">
       <Filter>Source Files\StyleLexers</Filter>
     </ClCompile>
@@ -208,9 +214,6 @@
       <Filter>Source Files\StyleLexers</Filter>
     </ClCompile>
     <ClCompile Include="StyleLexers\styleLexYAML.c">
-      <Filter>Source Files\StyleLexers</Filter>
-    </ClCompile>
-    <ClCompile Include="StyleLexers\styleLexAHKL.c">
       <Filter>Source Files\StyleLexers</Filter>
     </ClCompile>
     <ClCompile Include="AccelKeys.c">
@@ -369,8 +372,8 @@
     <ClCompile Include="..\uchardet\uchardet\src\LangModels\LangVietnameseModel.cpp">
       <Filter>Source Files\uchardet\LangModels</Filter>
     </ClCompile>
-    <ClCompile Include="EncodingDetection.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="uchardet\EncodingDetection.cpp">
+      <Filter>Source Files\uchardet</Filter>
     </ClCompile>
     <ClCompile Include="..\uchardet\uchardet\src\LangModels\LangAfricaansModel.cpp">
       <Filter>Source Files\uchardet\LangModels</Filter>
@@ -405,6 +408,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Edit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EditRTF.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Helpers.h">

@@ -2,8 +2,8 @@
 setlocal enableextensions
 set SCRIPT_DIR=%~dp0
 
-set NP3_WIN32_DIR=%SCRIPT_DIR%..\Bin\Release_x86_v143\
-set NP3_X64_DIR=%SCRIPT_DIR%..\Bin\Release_x64_v143\
+set NP3_WIN32_DIR=%SCRIPT_DIR%..\Bin\Release_x86_v145\
+set NP3_X64_DIR=%SCRIPT_DIR%..\Bin\Release_x64_v145\
 set NP3_BUILD_VER=%SCRIPT_DIR%..\Versions\build.txt
 
 :: --------------------------------------------------------------------------------------------------------------------
@@ -19,7 +19,7 @@ if [%LZ%]==[0] set "MM=%MM:~1,1%"
 set BUILD=0
 call :GETBUILD "%~1"
 
-set VERSHOULD=6.%YY%.%MM%%DD%.%BUILD%
+set VERSHOULD=7.%YY%.%MM%%DD%.%BUILD%
 
 :: --------------------------------------------------------------------------------------------------------------------
 

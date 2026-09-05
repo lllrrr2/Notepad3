@@ -101,6 +101,7 @@ BEGIN
     IDS_LEX_REG_FILES       "Tệp đăng ký"
     IDS_LEX_VHDL            "VHDL"
     IDS_LEX_JSON            "JSON"
+    IDS_LEX_JSON5           "JSON5"
     IDS_LEX_NSIS            "NSIS"
     IDS_LEX_INNO            "Kịch bản Inno Setup"
     IDS_LEX_RUBY            "Kịch bản Ruby"
@@ -109,6 +110,7 @@ BEGIN
     IDS_LEX_AUTOIT3         "Kịch bản AutoIt3"
     IDS_LEX_LATEX           "Tệp LaTeX"
     IDS_LEX_AHK             "Kịch bản AutoHotkey"
+    IDS_LEX_AHK2            "AutoHotkey v2 Script"
     IDS_LEX_CMAKE           "Kịch bản CMake"
     IDS_LEX_AVI_SYNTH       "Kịch bản AviSynth"
 END
@@ -136,6 +138,7 @@ STRINGTABLE
 BEGIN
     IDS_LEX_VERILOG         "Verilog HDL"
     IDS_LEX_SYSVERILOG      "SystemVerilog HDVL"
+    IDS_LEX_ABAQUS          "ABAQUS"
 END
 
 STRINGTABLE
@@ -153,7 +156,7 @@ BEGIN
     IDS_LEX_STD_SEL         "Văn bản đã chọn (Màu sắc)"
     IDS_LEX_STD_WSPC        "Ký tự trắng (Màu sắc, kích thước 1-12)"
     IDS_LEX_STD_LN_BACKGR   "Nổi bật dòng hiện tại"
-    IDS_LEX_STD_CARET       "Ký hiệu con trỏ (Màu sắc, kích thước 1-3)"
+    IDS_LEX_STD_CARET       "Ký hiệu con trỏ (Màu sắc, kích thước 1-20)"
     IDS_LEX_STD_LONG_LN     "Hiển thị dòng dài (Màu sắc)"
     IDS_LEX_STD_X_SPC       "Khoảng cách dòng (Kích thước)"
     IDS_LEX_2ND_STYLE       "Phong cách mặc định thứ hai"
@@ -168,8 +171,14 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_LEX_STD_NPCH        "Non-Printable Characters (Colors)"
+    IDS_LEX_2ND_NPCH        "2nd Non-Printable Characters (Colors)"
+END
+
+STRINGTABLE
+BEGIN
     IDS_LEX_2ND_LN_BACKGR   "Nổi bật dòng hiện tại thứ hai"
-    IDS_LEX_2ND_CARET       "Ký hiệu con trỏ thứ hai (Màu sắc, kích thước 1-3)"
+    IDS_LEX_2ND_CARET       "Ký hiệu con trỏ thứ hai (Màu sắc, kích thước 1-20)"
     IDS_LEX_2ND_LONG_LN     "Hiển thị dòng dài thứ hai (Màu sắc)"
     IDS_LEX_2ND_X_SPC       "Khoảng cách dòng thứ hai (Kích thước)"
     IDS_LEX_STD_BKMRK       "Đánh dấu và gấp (Màu sắc, kích thước)"
@@ -515,6 +524,51 @@ BEGIN
     IDS_LEX_STR_SysTasks    "Công việc hệ thống"
     IDS_LEX_STR_AfterLabel  "Sau nhãn"
     IDS_LEX_STR_Table       "Table"
+    IDS_LEX_STR_StarCmd     "Star Command"
+    IDS_LEX_STR_SlashCmd    "Slash Command"
+    IDS_LEX_STR_Processor   "Processor"
+    IDS_LEX_STR_Argument    "Argument"
+    IDS_LEX_STR_SGMLCmd     "SGML Command"
+    IDS_LEX_STR_SGMLParam   "SGML 1st Param"
+    IDS_LEX_STR_SGMLStr     "SGML String"
+    IDS_LEX_STR_SGMLErr     "SGML Error"
+    IDS_LEX_STR_SGMLSpc     "SGML Special"
+    IDS_LEX_STR_SGMLEnt     "SGML Entity"
+    IDS_LEX_STR_SGMLCmt     "SGML Comment"
+    IDS_LEX_STR_SGMLBlk     "SGML Block Default"
+    IDS_LEX_STR_AU3Expand   "Expand Variable"
+    IDS_LEX_STR_COMObj      "COM Object"
+    IDS_LEX_STR_DocCmt      "Doc Comment"
+    IDS_LEX_STR_InstProp    "Instance Property"
+    IDS_LEX_STR_UserLit     "User Literal"
+    IDS_LEX_STR_HdrText     "Header Text"
+    IDS_LEX_STR_PerlXlat    "Transliteration tr///"
+    IDS_LEX_STR_PerlIVRx    "Interpolated Var (regex/backticks)"
+    IDS_LEX_STR_PerlIVQQ    "Interpolated Var (qq/qx/here)"
+    IDS_LEX_STR_HereStr     "Here String"
+    IDS_LEX_STR_RbHereDoc   "Here-Doc"
+    IDS_LEX_STR_RbPctStr    "%-String"
+    IDS_LEX_STR_RbPctWord   "%-Word/Symbol List"
+    IDS_LEX_STR_RbDemoted   "Demoted Keyword"
+    IDS_LEX_STR_RbStdStream "Standard Stream"
+    IDS_LEX_STR_CStr        "C String"
+    IDS_LEX_STR_QOper       "Quoted Operator"
+    IDS_LEX_STR_TclExpand   "Expansion {*}"
+    IDS_LEX_STR_Keyword47   "Keyword 4-7"
+    IDS_LEX_STR_Keyword8    "Keyword 8"
+    IDS_LEX_STR_MacroDef    "Macro Def"
+    IDS_LEX_STR_Macro       "Macro"
+    IDS_LEX_STR_Typedef     "Typedef"
+    IDS_LEX_STR_Class       "Class"
+    IDS_LEX_STR_Verbatim    "Verbatim"
+    IDS_LEX_STR_Escape      "Escape"
+    IDS_LEX_STR_ParamExp    "Parameter Expansion"
+    IDS_LEX_STR_SyntaxOp    "Syntax Operator"
+    IDS_LEX_STR_IfDef       "If Def"
+    IDS_LEX_STR_WhileDef    "While Def"
+    IDS_LEX_STR_ForEachDef  "For Each Def"
+    IDS_LEX_STR_DocCmtKw    "Doc Comment Keyword"
+    IDS_LEX_STR_UserDef     "User Defined"
 END
 
 STRINGTABLE

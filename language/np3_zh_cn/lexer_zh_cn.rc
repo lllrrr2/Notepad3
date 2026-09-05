@@ -101,6 +101,7 @@ BEGIN
     IDS_LEX_REG_FILES       "注册表项"
     IDS_LEX_VHDL            "VHDL 源代码"
     IDS_LEX_JSON            "JSON 文件"
+    IDS_LEX_JSON5           "JSON5"
     IDS_LEX_NSIS            "NSIS 脚本"
     IDS_LEX_INNO            "Inno 脚本"
     IDS_LEX_RUBY            "Ruby 脚本"
@@ -109,6 +110,7 @@ BEGIN
     IDS_LEX_AUTOIT3         "AutoIt3 脚本"
     IDS_LEX_LATEX           "LaTeX 源代码"
     IDS_LEX_AHK             "AutoHotkey 脚本"
+    IDS_LEX_AHK2            "AutoHotkey v2 Script"
     IDS_LEX_CMAKE           "CMake 脚本"
     IDS_LEX_AVI_SYNTH       "AviSynth 脚本"
 END
@@ -136,6 +138,7 @@ STRINGTABLE
 BEGIN
     IDS_LEX_VERILOG         "Verilog HDL"
     IDS_LEX_SYSVERILOG      "SystemVerilog HDVL"
+    IDS_LEX_ABAQUS          "ABAQUS"
 END
 
 STRINGTABLE
@@ -153,7 +156,7 @@ BEGIN
     IDS_LEX_STD_SEL         "已选定的文本（颜色）"
     IDS_LEX_STD_WSPC        "空白符（颜色，大小必须为 1-12）"
     IDS_LEX_STD_LN_BACKGR   "高亮的当前行"
-    IDS_LEX_STD_CARET       "插入光标（颜色，大小必须为 1-3）"
+    IDS_LEX_STD_CARET       "插入光标（颜色，大小必须为 1-20）"
     IDS_LEX_STD_LONG_LN     "行长度标记（颜色）"
     IDS_LEX_STD_X_SPC       "额外的行间距（大小）"
     IDS_LEX_2ND_STYLE       "备选基本样式"
@@ -168,8 +171,14 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_LEX_STD_NPCH        "不可打印字符（颜色）"
+    IDS_LEX_2ND_NPCH        "备选：不可打印字符（颜色）"
+END
+
+STRINGTABLE
+BEGIN
     IDS_LEX_2ND_LN_BACKGR   "备选：高亮的当前行"
-    IDS_LEX_2ND_CARET       "备选：插入光标（颜色，大小必须为 1-3）"
+    IDS_LEX_2ND_CARET       "备选：插入光标（颜色，大小必须为 1-20）"
     IDS_LEX_2ND_LONG_LN     "备选：行长度标记（颜色）"
     IDS_LEX_2ND_X_SPC       "备选：额外的行间距（大小）"
     IDS_LEX_STD_BKMRK       "书签和折叠（颜色, 大小）"
@@ -261,8 +270,8 @@ BEGIN
     IDS_LEX_STR_63194       "标记类别"
     IDS_LEX_STR_63195       "标记 ID"
     IDS_LEX_STR_63196       "标记属性"
-    IDS_LEX_STR_63197       "伪类别"
-    IDS_LEX_STR_63198       "未知伪类别"
+    IDS_LEX_STR_63197       "伪类"
+    IDS_LEX_STR_63198       "未知伪类"
     IDS_LEX_STR_63199       "CSS 属性"
 END
 
@@ -514,7 +523,52 @@ BEGIN
     IDS_LEX_STR_PortConn    "端口连接"
     IDS_LEX_STR_SysTasks    "系统任务"
     IDS_LEX_STR_AfterLabel  "在标签后"
-    IDS_LEX_STR_Table       "Table"
+    IDS_LEX_STR_Table       "表"
+    IDS_LEX_STR_StarCmd     "星号命令"
+    IDS_LEX_STR_SlashCmd    "斜杠命令"
+    IDS_LEX_STR_Processor   "处理器"
+    IDS_LEX_STR_Argument    "参数"
+    IDS_LEX_STR_SGMLCmd     "SGML 命令"
+    IDS_LEX_STR_SGMLParam   "SGML 首参数"
+    IDS_LEX_STR_SGMLStr     "SGML 字符串"
+    IDS_LEX_STR_SGMLErr     "SGML 错误"
+    IDS_LEX_STR_SGMLSpc     "SGML 特殊符号"
+    IDS_LEX_STR_SGMLEnt     "SGML 实体"
+    IDS_LEX_STR_SGMLCmt     "SGML 注释"
+    IDS_LEX_STR_SGMLBlk     "SGML 块默认"
+    IDS_LEX_STR_AU3Expand   "展开变量"
+    IDS_LEX_STR_COMObj      "COM 对象"
+    IDS_LEX_STR_DocCmt      "文档注释"
+    IDS_LEX_STR_InstProp    "实例属性"
+    IDS_LEX_STR_UserLit     "用户字面量"
+    IDS_LEX_STR_HdrText     "标题文本"
+    IDS_LEX_STR_PerlXlat    "字符转译 tr///"
+    IDS_LEX_STR_PerlIVRx    "内插变量（正则/反引号）"
+    IDS_LEX_STR_PerlIVQQ    "内插变量（qq/qx/here）"
+    IDS_LEX_STR_HereStr     "Here 字符串"
+    IDS_LEX_STR_RbHereDoc   "Here-Doc"
+    IDS_LEX_STR_RbPctStr    "% 字符串"
+    IDS_LEX_STR_RbPctWord   "% 词/符号列表"
+    IDS_LEX_STR_RbDemoted   "降级关键字"
+    IDS_LEX_STR_RbStdStream "标准流"
+    IDS_LEX_STR_CStr        "C 字符串"
+    IDS_LEX_STR_QOper       "引号运算符"
+    IDS_LEX_STR_TclExpand   "展开 {*}"
+    IDS_LEX_STR_Keyword47   "关键字 4-7"
+    IDS_LEX_STR_Keyword8    "关键字 8"
+    IDS_LEX_STR_MacroDef    "宏定义"
+    IDS_LEX_STR_Macro       "宏"
+    IDS_LEX_STR_Typedef     "类型定义"
+    IDS_LEX_STR_Class       "类"
+    IDS_LEX_STR_Verbatim    "原样"
+    IDS_LEX_STR_Escape      "转义"
+    IDS_LEX_STR_ParamExp    "参数展开"
+    IDS_LEX_STR_SyntaxOp    "语法运算符"
+    IDS_LEX_STR_IfDef       "If 定义"
+    IDS_LEX_STR_WhileDef    "While 定义"
+    IDS_LEX_STR_ForEachDef  "For Each 定义"
+    IDS_LEX_STR_DocCmtKw    "文档注释关键字"
+    IDS_LEX_STR_UserDef     "用户定义"
 END
 
 STRINGTABLE

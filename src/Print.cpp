@@ -24,14 +24,15 @@
 #define DBG_NEW new
 #endif
 
+#include <sdkddkver.h>
 #if !defined(WINVER)
-#define WINVER 0x601  /*_WIN32_WINNT_WIN7*/
+#define WINVER _WIN32_WINNT_WIN10
 #endif
 #if !defined(_WIN32_WINNT)
-#define _WIN32_WINNT 0x601  /*_WIN32_WINNT_WIN7*/
+#define _WIN32_WINNT _WIN32_WINNT_WIN10
 #endif
 #if !defined(NTDDI_VERSION)
-#define NTDDI_VERSION 0x06010000  /*NTDDI_WIN7*/
+#define NTDDI_VERSION NTDDI_WIN10_RS5
 #endif
 #define VC_EXTRALEAN 1
 #define WIN32_LEAN_AND_MEAN 1
@@ -39,6 +40,7 @@
 #include <windows.h>
 
 #include <commctrl.h>
+#include <objbase.h>     // STDMETHOD — gates PRINTDLGEX / PRINTPAGERANGE in commdlg.h
 #include <commdlg.h>
 #include <string_view>
 
@@ -51,7 +53,9 @@ extern "C" {
 #include "DarkMode/DarkMode.h"
 
 
+
 extern "C" float Style_GetBaseFontSize();
+extern "C" void UpdateStatusbar(const bool bForceRedraw);
 
 // Stored objects...
 static HGLOBAL hDevMode = nullptr;
@@ -71,81 +75,6 @@ static void _StatusUpdatePrintPage(int iPageNum)
 
 //=============================================================================
 //
-// LPPRINTHOOKPROC _LPPrintHookProc()
-//
-static UINT_PTR CALLBACK _LPPrintHookProc(HWND hwnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
-{
-    switch (uiMsg) {
-
-    case WM_INITDIALOG: {
-
-        SetDialogIconNP3(hwnd);
-        InitWindowCommon(hwnd, true);
-
-#ifdef D_NP3_WIN10_DARK_MODE
-        if (UseDarkMode()) {
-            SetExplorerTheme(GetDlgItem(hwnd, IDOK));
-            SetExplorerTheme(GetDlgItem(hwnd, IDCANCEL));
-            SetExplorerTheme(GetDlgItem(hwnd, 0x401));
-            int const ctl[] = { chx1, rad1, rad2, rad3, grp1, grp2, grp4, cmb4 };
-            for (int i : ctl) {
-                SetWindowTheme(GetDlgItem(hwnd, i), L"", L""); // remove theme for BS_AUTORADIOBUTTON
-            }
-        }
-#endif
-
-        SendMessage(hwnd, WM_THEMECHANGED, 0, 0);
-    }
-    break;
-
-    case WM_DPICHANGED:
-        UpdateWindowLayoutForDPI(hwnd, (RECT*)lParam, LOWORD(wParam));
-        break;
-
-#ifdef D_NP3_WIN10_DARK_MODE
-
-    CASE_WM_CTLCOLOR_SET:
-        return SetDarkModeCtlColors((HDC)wParam, UseDarkMode());
-        break;
-
-    case WM_SETTINGCHANGE:
-        if (IsDarkModeSupported() && IsColorSchemeChangeMessage(lParam)) {
-            SendMessage(hwnd, WM_THEMECHANGED, 0, 0);
-        }
-        break;
-
-    case WM_THEMECHANGED:
-        if (IsDarkModeSupported()) {
-            bool const darkModeEnabled = CheckDarkModeEnabled();
-            AllowDarkModeForWindowEx(hwnd, darkModeEnabled);
-            RefreshTitleBarThemeColor(hwnd);
-
-            int const buttons[] = { IDOK, IDCANCEL, 0x401 };
-            for (int button : buttons) {
-                HWND const hBtn = GetDlgItem(hwnd, button);
-                AllowDarkModeForWindowEx(hBtn, darkModeEnabled);
-                SendMessage(hBtn, WM_THEMECHANGED, 0, 0);
-            }
-            UpdateWindowEx(hwnd);
-        }
-        break;
-
-#endif
-
-    case WM_COMMAND:
-        if (IsYesOkay(wParam)) {
-        }
-        break;
-
-    default:
-        break;
-    }
-    return FALSE;
-}
-
-
-//=============================================================================
-//
 //  EditPrint() - Code from SciTE
 //
 extern "C" bool EditPrint(HWND hwnd,LPCWSTR pszDocTitle,LPCWSTR pszPageFormat)
@@ -158,22 +87,25 @@ extern "C" bool EditPrint(HWND hwnd,LPCWSTR pszDocTitle,LPCWSTR pszPageFormat)
     constexpr COLORREF const colorBlack = RGB(0x00, 0x00, 0x00);
     constexpr COLORREF const colorWhite = RGB(0xFF, 0xFF, 0xFF);
 
-    PRINTDLG pdlg = { sizeof(PRINTDLG), nullptr, nullptr, nullptr, nullptr,
-                      0, 0, 0, 0, 0, 0, nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
-                    };
+    // Modern Common Print Dialog (Win2000+, property-sheet host).
+    // PRINTDLGEX has no nFromPage/nToPage; page ranges live in lpPageRanges.
+    // Single-range to match the existing downstream loop behaviour.
+    PRINTPAGERANGE pageRanges[1] = { { 1, 0xffffU } };
 
-    pdlg.hwndOwner = GetParent(hwnd);
-    pdlg.hInstance = Globals.hInstance;
-    pdlg.Flags = PD_ENABLEPRINTHOOK | PD_USEDEVMODECOPIES | PD_ALLPAGES | PD_RETURNDC;
-    pdlg.nFromPage = 1;
-    pdlg.nToPage = 1;
-    pdlg.nMinPage = 1;
-    pdlg.nMaxPage = 0xffffU;
-    pdlg.nCopies = 1;
-    pdlg.hDC = nullptr;
-    pdlg.hDevMode = hDevMode;
-    pdlg.hDevNames = hDevNames;
-    pdlg.lpfnPrintHook = _LPPrintHookProc;
+    PRINTDLGEX pdlg = { 0 };
+    pdlg.lStructSize    = sizeof(PRINTDLGEX);
+    pdlg.hwndOwner      = GetParent(hwnd);
+    pdlg.hDevMode       = hDevMode;
+    pdlg.hDevNames      = hDevNames;
+    pdlg.hDC            = nullptr;
+    pdlg.Flags          = PD_USEDEVMODECOPIES | PD_ALLPAGES | PD_RETURNDC | PD_NOCURRENTPAGE;
+    pdlg.nPageRanges    = 0;        // no preset ranges; user picks land here
+    pdlg.nMaxPageRanges = ARRAYSIZE(pageRanges);
+    pdlg.lpPageRanges   = pageRanges;
+    pdlg.nMinPage       = 1;
+    pdlg.nMaxPage       = 0xffffU;
+    pdlg.nCopies        = 1;
+    pdlg.nStartPage     = START_PAGE_GENERAL;
 
     DocPos const startPos = SciCall_GetSelectionStart();
     DocPos const endPos = SciCall_GetSelectionEnd();
@@ -185,16 +117,24 @@ extern "C" bool EditPrint(HWND hwnd,LPCWSTR pszDocTitle,LPCWSTR pszPageFormat)
     }
 
     // |= 0 - Don't display dialog box, just use the default printer and options
-    pdlg.Flags |= (Flags.PrintFileAndLeave == 1) ? PD_RETURNDEFAULT : 0;
+    if (Flags.PrintFileAndLeave == 1) {
+        pdlg.Flags |= PD_RETURNDEFAULT;
+    }
 
-    if (!PrintDlg(&pdlg)) {
-        return true; // False means error...
+    HRESULT const hr = PrintDlgEx(&pdlg);
+    if (FAILED(hr) || (pdlg.dwResultAction == PD_RESULT_CANCEL)) {
+        return true;
     }
 
     hDevMode = pdlg.hDevMode;
     hDevNames = pdlg.hDevNames;
 
     HDC const hdc = pdlg.hDC;
+
+    // Resolve the (single) page range; downstream code reads these instead of
+    // the legacy nFromPage/nToPage fields, which PRINTDLGEX does not have.
+    DWORD const dwPageFrom = (pdlg.nPageRanges > 0) ? pdlg.lpPageRanges[0].nFromPage : 1U;
+    DWORD const dwPageTo   = (pdlg.nPageRanges > 0) ? pdlg.lpPageRanges[0].nToPage   : 0xffffU;
 
     // Get printer resolution
     POINT ptDpi;
@@ -356,8 +296,9 @@ extern "C" bool EditPrint(HWND hwnd,LPCWSTR pszDocTitle,LPCWSTR pszPageFormat)
     SendMessage(hwnd,SCI_SETPRINTCOLOURMODE,printColorModes[Settings.PrintColorMode],0);
     //SendMessage(hwnd, SCI_SETPRINTWRAPMODE, SC_WRAP_WORD, 0); // default: SC_WRAP_WORD
 
-    // Set print magnification...
-    SendMessage(hwnd, SCI_SETPRINTMAGNIFICATION, (WPARAM)Settings.PrintZoom, 0);
+    // Set print magnification (convert NP3 percent to Scintilla additive points)
+    int const printZoomLevel = (int)(((__int64)NP3_ZOOM_BASE_FONT_SIZE * (Settings.PrintZoom - 100) + 5000) / 10000);
+    SendMessage(hwnd, SCI_SETPRINTMAGNIFICATION, (WPARAM)printZoomLevel, 0);
 
     DocPos const lengthDocMax = SciCall_GetTextLength();
     DocPos lengthDoc = lengthDocMax;
@@ -402,7 +343,7 @@ extern "C" bool EditPrint(HWND hwnd,LPCWSTR pszDocTitle,LPCWSTR pszPageFormat)
 
     while (lengthPrinted < lengthDoc) {
         bool printPage = (!(pdlg.Flags & PD_PAGENUMS) ||
-                          ((pageNum >= pdlg.nFromPage) && (pageNum <= pdlg.nToPage)));
+                          (((DWORD)pageNum >= dwPageFrom) && ((DWORD)pageNum <= dwPageTo)));
 
         StringCchPrintf(pageString,COUNTOF(pageString),pszPageFormat,pageNum);
 
@@ -487,7 +428,7 @@ extern "C" bool EditPrint(HWND hwnd,LPCWSTR pszDocTitle,LPCWSTR pszPageFormat)
         }
         pageNum++;
 
-        if ((pdlg.Flags & PD_PAGENUMS) && (pageNum > pdlg.nToPage)) {
+        if ((pdlg.Flags & PD_PAGENUMS) && ((DWORD)pageNum > dwPageTo)) {
             break;
         }
     }
@@ -510,6 +451,9 @@ extern "C" bool EditPrint(HWND hwnd,LPCWSTR pszDocTitle,LPCWSTR pszPageFormat)
         GetCursorPos(&pt);
         SetCursorPos(pt.x, pt.y);
     }
+
+    // Restore status bar to normal display - fixes #5313
+    UpdateStatusbar(true);
 
     return true;
 }
@@ -543,6 +487,9 @@ static UINT_PTR CALLBACK _LPSetupHookProc(HWND hwnd, UINT uiMsg, WPARAM wParam, 
             SetExplorerTheme(GetDlgItem(hwnd, IDCANCEL));
             SetExplorerTheme(GetDlgItem(hwnd, IDC_PRINTER));
             int const ctl[] = { 30, 31, 32, 33, 34, cmb2, cmb3, 1037, 1038, 1056, 1057, 1072, 1073, 1074, 1075, 1076, 1089, 1090,
+                                1102, 1103, 1104, 1105,         // margin labels
+                                1155, 1156, 1157, 1158,         // margin edits
+                                1080, 1081, 1082,               // preview rects
                                 IDC_STATIC, IDC_STATIC2, IDC_STATIC3, IDC_STATIC4, IDC_STATIC5, IDC_STATIC6
                               };
             for (int i : ctl) {
@@ -552,9 +499,9 @@ static UINT_PTR CALLBACK _LPSetupHookProc(HWND hwnd, UINT uiMsg, WPARAM wParam, 
 #endif
 
         UDACCEL const acc[1] = { { 0, 10 } };
-        SendDlgItemMessage(hwnd, 30, EM_LIMITTEXT, 32, 0);
+        SendDlgItemMessage(hwnd, 30, EM_LIMITTEXT, 4, 0);
         SendDlgItemMessage(hwnd, 31, UDM_SETACCEL, 1, (WPARAM)acc);
-        SendDlgItemMessage(hwnd, 31, UDM_SETRANGE32, SC_MIN_ZOOM_LEVEL, SC_MAX_ZOOM_LEVEL);
+        SendDlgItemMessage(hwnd, 31, UDM_SETRANGE32, NP3_MIN_ZOOM_PERCENT, NP3_MAX_ZOOM_PERCENT);
         SendDlgItemMessage(hwnd, 31, UDM_SETPOS32, 0, Settings.PrintZoom);
 
         // Set header options
@@ -635,11 +582,15 @@ CASE_WM_CTLCOLOR_SET:
             AllowDarkModeForWindowEx(hwnd, darkModeEnabled);
             RefreshTitleBarThemeColor(hwnd);
 
-            int const buttons[] = { IDOK, IDCANCEL, IDC_PRINTER };
-            for (int button : buttons) {
-                HWND const hBtn = GetDlgItem(hwnd, button);
-                AllowDarkModeForWindowEx(hBtn, darkModeEnabled);
-                SendMessage(hBtn, WM_THEMECHANGED, 0, 0);
+            int const ctl[] = { IDOK, IDCANCEL, IDC_PRINTER,
+                                30, 31, 32, 33, 34,         // custom: zoom, spin, header, footer, color
+                                1137, 1138,                 // standard: paper size, source combos
+                                1155, 1156, 1157, 1158      // standard: margin edits
+                              };
+            for (int id : ctl) {
+                HWND const hCtl = GetDlgItem(hwnd, id);
+                AllowDarkModeForWindowEx(hCtl, darkModeEnabled);
+                SendMessage(hCtl, WM_THEMECHANGED, 0, 0);
             }
             UpdateWindowEx(hwnd);
         }
@@ -651,7 +602,6 @@ CASE_WM_CTLCOLOR_SET:
             BOOL bError = FALSE;
             auto const iZoom = static_cast<int>(SendDlgItemMessage(hwnd, 31, UDM_GETPOS32, 0, (LPARAM)&bError));
             Settings.PrintZoom = bError ? Defaults.PrintZoom : iZoom;
-            /*int const iFontSize = (int)*/ SendDlgItemMessage(hwnd, 41, UDM_GETPOS32, 0, (LPARAM)&bError);
             Settings.PrintHeader = static_cast<int>(SendDlgItemMessage(hwnd, 32, CB_GETCURSEL, 0, 0));
             Settings.PrintFooter = static_cast<int>(SendDlgItemMessage(hwnd, 33, CB_GETCURSEL, 0, 0));
             Settings.PrintColorMode = static_cast<int>(SendDlgItemMessage(hwnd, 34, CB_GETCURSEL, 0, 0));

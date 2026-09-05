@@ -79,19 +79,22 @@ BEGIN
         BEGIN
             MENUITEM "在檔案中搜尋(&S)...\tCtrl+Shift+F",      IDM_GREP_WIN_SEARCH
             MENUITEM SEPARATOR
-            MENUITEM "新增空視窗(&N)\tAlt+N",           IDM_FILE_NEWWINDOW
+            MENUITEM "新增視窗(&N)\tAlt+N",            IDM_FILE_NEWWINDOW
             MENUITEM "重複的執行個體(&D)\tAlt+Shift+N",   IDM_FILE_NEWWINDOW2
             MENUITEM SEPARATOR
             MENUITEM "以管理員權限重新啟動(&R)",                    IDM_FILE_LAUNCH_ELEVATED
             MENUITEM SEPARATOR
             MENUITEM "執行檔案(&D)\tCtrl+L",                   IDM_FILE_LAUNCH
             MENUITEM "開啟方式(&O)...\tAlt+L",                 IDM_FILE_OPENWITH
-            MENUITEM "命令(&C)...\tCtrl+R",                    IDM_FILE_RUN
+            MENUITEM "命令(&M)...\tCtrl+R",                    IDM_FILE_RUN
             MENUITEM SEPARATOR
             MENUITEM "用超連結範本 1 開啟(&1)\tCtrl+Shift+1",           CMD_WEBACTION1
             MENUITEM "用超連結範本 2 開啟(&2)\tCtrl+Shift+2",           CMD_WEBACTION2
             MENUITEM SEPARATOR
-            MENUITEM "開啟檔案總管(&F)",                      IDM_FILE_EXPLORE_DIR
+            MENUITEM "開啟選取內容所在的資料夾(&C)", IDM_EDIT_OPEN_CONTAINING_FOLDER_SEL
+            MENUITEM "開啟選取內容指向的檔案(&F)",    IDM_EDIT_OPEN_FILE_FROM_SEL
+            MENUITEM SEPARATOR
+            MENUITEM "開啟檔案總管(&E)",                      IDM_FILE_EXPLORE_DIR
         END
         MENUITEM SEPARATOR
         MENUITEM "從檔案還原(&V)\tF5",                  IDM_FILE_REVERT
@@ -154,7 +157,7 @@ BEGIN
     END
     POPUP "編輯(&E)"
     BEGIN
-        MENUITEM "唯讀(&R)"                        IDM_VIEW_READONLY
+        MENUITEM "唯讀(&O)",                       IDM_VIEW_READONLY
         MENUITEM SEPARATOR
         MENUITEM "復原(&U)\tCtrl+Z",                          IDM_EDIT_UNDO
         MENUITEM "取消復原(&R)\tCtrl+Y",                       IDM_EDIT_REDO
@@ -163,11 +166,14 @@ BEGIN
         MENUITEM "複製(&C)\tCtrl+C",                          IDM_EDIT_COPY
         MENUITEM "全部複製(&L)\tAlt+C",                       IDM_EDIT_COPYALL
         MENUITEM "增量複製(&Y)\tCtrl+E",                      IDM_EDIT_COPYADD
+        MENUITEM "複製為 RTF(&F)",                            IDM_EDIT_COPYRTF
         MENUITEM "貼上(&P)\tCtrl+V",                          IDM_EDIT_PASTE
         MENUITEM "與剪貼簿置換(&W)\tCtrl+K",                  IDM_EDIT_SWAP
-        MENUITEM "刪除(&D)\tDel",                             IDM_EDIT_CLEAR
-        MENUITEM "清空剪貼簿(&E)",                            IDM_EDIT_CLEARCLIPBOARD
         MENUITEM "全選(&A)\tCtrl+A",                          IDM_EDIT_SELECTALL
+        MENUITEM "刪除(&D)\tDel",                             IDM_EDIT_CLEAR
+        MENUITEM SEPARATOR
+        MENUITEM "清空剪貼簿(&E)",                            IDM_EDIT_CLEARCLIPBOARD
+        MENUITEM "切換監視剪貼簿(&B)",  IDM_EDIT_TOGGLE_PASTEBOARD
         MENUITEM SEPARATOR
         POPUP "單詞(&O)"
         BEGIN
@@ -305,14 +311,17 @@ BEGIN
             MENUITEM "增大數值(&I)\tCtrl+Alt+NK+",             CMD_INCREASENUM
             MENUITEM "減小數值(&D)\tCtrl+Alt+NK-",             CMD_DECREASENUM
             MENUITEM SEPARATOR
-            MENUITEM "尋找符合的括號(&F)\tCtrl+B",                    IDM_EDIT_FINDMATCHINGBRACE
-            MENUITEM "選定直到符合的括號(&M)\tCtrl+Shift+B",          IDM_EDIT_SELTOMATCHINGBRACE
+            MENUITEM "尋找符合的括號(&MF)\tCtrl+B",                    IDM_EDIT_FINDMATCHINGBRACE
+            MENUITEM "選定直到符合的括號(&S)\tCtrl+Shift+B",          IDM_EDIT_SELTOMATCHINGBRACE
             MENUITEM SEPARATOR
             MENUITEM "選定直到下一個尋找符合(&N)\tCtrl+Alt+F2",        IDM_EDIT_SELTONEXT
             MENUITEM "選定直到上一個尋找符合(&P)\tCtrl+Alt+Shift+F2",  IDM_EDIT_SELTOPREV
             MENUITEM SEPARATOR
             MENUITEM "選定單詞或行(&W)\tCtrl+Spc",             IDM_EDIT_SELECTWORD
             MENUITEM "選定全部符合(&A)\tCtrl+Shift+Spc",       IDM_EDIT_SELECTALLMATCHES
+            MENUITEM SEPARATOR
+            MENUITEM "開啟選取內容所在的資料夾(&C)",          IDM_EDIT_OPEN_CONTAINING_FOLDER_SEL
+            MENUITEM "開啟選取內容指向的檔案(&F)",            IDM_EDIT_OPEN_FILE_FROM_SEL
             MENUITEM SEPARATOR
             MENUITEM "換行時重定復原操作邊界(&T)",              IDM_VIEW_SPLIT_UNDOTYPSEQ_LNBRK
         END
@@ -350,6 +359,7 @@ BEGIN
         MENUITEM "顯示軟換行(&P)\tCtrl+Shift+7",                IDM_VIEW_WORDWRAPSYMBOLS
         MENUITEM "顯示空格(&W)\tCtrl+Shift+8",                  IDM_VIEW_SHOWBLANKS
         MENUITEM "顯示換行符號(&E)\tCtrl+Shift+9",              IDM_VIEW_SHOWEOLS
+        MENUITEM "顯示不可列印字元(&P)",                     IDM_VIEW_NONPRINTINGCHARS
         MENUITEM SEPARATOR
         POPUP "變更記錄標記"
         BEGIN
@@ -358,15 +368,15 @@ BEGIN
             MENUITEM "僅顯示於文件中",               IDM_VIEW_CHGHIST_DOCTXT
             MENUITEM "全部顯示",             IDM_VIEW_CHGHIST_ALL
         END
-        MENUITEM "清除變更/復原歷程"             IDM_VIEW_CHGHIST_CLEAR_UNDOREDO
+        MENUITEM "清除變更/復原歷程",            IDM_VIEW_CHGHIST_CLEAR_UNDOREDO
         MENUITEM SEPARATOR
         MENUITEM "檢測超連結(&Y)\tCtrl+Alt+W",                 IDM_VIEW_HYPERLINKHOTSPOTS
         POPUP "檢測 #RRGGBB 顏色(&C)"
         BEGIN
             MENUITEM "關閉(&O)",                            IDM_VIEW_COLORDEFHOTSPOTS
-            MENUITEM "RGB+A(&R)"                            IDM_VIEW_COLOR_RGBA
-            MENUITEM "A+RGB(&A)"                            IDM_VIEW_COLOR_ARGB
-            MENUITEM "BGRA(&B)"                             IDM_VIEW_COLOR_BGRA
+            MENUITEM "RGB+A(&R)",                           IDM_VIEW_COLOR_RGBA
+            MENUITEM "A+RGB(&A)",                           IDM_VIEW_COLOR_ARGB
+            MENUITEM "BGRA(&B)",                            IDM_VIEW_COLOR_BGRA
         END
         MENUITEM "高亮 Unicode 碼點(&U)",                 IDM_VIEW_UNICODE_POINTS
         MENUITEM "提示符合括號(&V)\tCtrl+Shift+V",             IDM_VIEW_MATCHBRACES
@@ -483,6 +493,7 @@ BEGIN
         MENUITEM "檔案修改通知(&C)...\tAlt+F5",                 IDM_SET_CHANGENOTIFY
         ///MENUITEM "自動儲存和備份設定...",            IDM_SET_AUTOSAVE_BACKUP
         MENUITEM "關閉訊息提示音(&M)",                          IDM_SET_MUTE_MESSAGEBEEP
+        MENUITEM "解析為 UNC 路徑(&U)",                    IDM_SET_RESOLVE_UNC_PATHS
         POPUP "Esc 鍵功能(&E)"
         BEGIN
             MENUITEM "無(&N)",                                IDM_SET_NOESCFUNC
@@ -492,6 +503,11 @@ BEGIN
         MENUITEM "執行工具前先儲存(&V)",                       IDM_SET_SAVEBEFORERUNNINGTOOLS
         MENUITEM "計算微小表達式(&x)",                         IDM_SET_EVALTINYEXPRONSEL
         MENUITEM "啟用多重游標選定",                IDM_SET_MULTIPLE_SELECTION
+        POPUP "預設資料夾(&D)"
+        BEGIN
+            MENUITEM "設定為目前檔案的資料夾(&C)",  IDM_SET_DEFAULTDIR
+            MENUITEM "重置為預設(&R)",                 IDM_SET_DEFAULTDIR_RESET
+        END
         MENUITEM SEPARATOR
         POPUP "記憶(&R)"
         BEGIN
@@ -560,6 +576,7 @@ BEGIN
     POPUP "+"
     BEGIN
         MENUITEM "打開超連結",                         CMD_OPEN_HYPERLINK
+        MENUITEM "複製超連結",           CMD_COPY_HYPERLINK
         MENUITEM SEPARATOR
         MENUITEM "復原",                                  IDM_EDIT_UNDO
         MENUITEM "取消復原",                                  IDM_EDIT_REDO
@@ -571,10 +588,23 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "全選",                                  IDM_EDIT_SELECTALL
         MENUITEM SEPARATOR
+        POPUP "轉換大小寫"
+        BEGIN
+            MENUITEM "轉為大寫",              CMD_CTX_UPPERCASE
+            MENUITEM "轉為小寫",              CMD_CTX_LOWERCASE
+            MENUITEM SEPARATOR
+            MENUITEM "反轉大小寫",            CMD_CTX_INVERTCASE
+            MENUITEM "標題大寫",             CMD_CTX_TITLECASE
+            MENUITEM "句首大寫",          CMD_CTX_SENTENCECASE
+        END
+        MENUITEM SEPARATOR
         MENUITEM "摺疊/展開",                             IDM_VIEW_TOGGLE_CURRENT_FOLD
         MENUITEM SEPARATOR
         MENUITEM "用超連結模板 1 打開",                    CMD_WEBACTION1
         MENUITEM "用超連結模板 2 打開",                    CMD_WEBACTION2
+        MENUITEM SEPARATOR
+        MENUITEM "開啟選取內容所在的資料夾", IDM_EDIT_OPEN_CONTAINING_FOLDER_SEL
+        MENUITEM "開啟選取內容指向的檔案",   IDM_EDIT_OPEN_FILE_FROM_SEL
         MENUITEM "打開檔案總管",                          IDM_FILE_EXPLORE_DIR
     END
     POPUP "+"

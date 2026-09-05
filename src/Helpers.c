@@ -18,6 +18,7 @@
 
 #include <shlobj.h>
 #include <shellapi.h>
+#include <propkey.h>
 #include <ctype.h>
 #include <wchar.h>
 
@@ -32,12 +33,6 @@
 #include "Config/Config.h"
 #include "DarkMode/DarkMode.h"
 #include "Version.h"
-
-#pragma warning(push)
-#pragma warning(disable : 4201) // union/struct w/o name
-#include "tinyexpr/tinyexpr.h"
-//#include "tinyexprcpp/tinyexpr_cif.h"
-#pragma warning(pop)
 
 #include "Scintilla.h"
 
@@ -61,21 +56,6 @@ void DbgLog(const wchar_t *fmt, ...)
 //
 //  Cut of substrings defined by pattern
 //
-CHAR* StrCutIA(CHAR* s,const CHAR* pattern)
-{
-    CHAR* p = NULL;
-    do {
-        p = StrStrIA(s,pattern);
-        if (p) {
-            CHAR* q = p + StringCchLenA(pattern,0);
-            while (*p != '\0') {
-                *p++ = *q++;
-            }
-        }
-    } while (p);
-    return s;
-}
-
 WCHAR* StrCutIW(WCHAR* s,const WCHAR* pattern)
 {
     WCHAR* p = NULL;
@@ -147,20 +127,6 @@ bool StrDelChrW(LPWSTR pszSource, LPCWSTR pCharsToRemove)
 //
 //  Find next token in string
 //
-CHAR* StrNextTokA(CHAR* strg, const CHAR* tokens)
-{
-    CHAR* n = NULL;
-    const CHAR* t = tokens;
-    while (t && *t) {
-        CHAR* const f = StrChrA(strg, *t);
-        if (!n || (f && (f < n))) {
-            n = f;
-        }
-        ++t;
-    }
-    return n;
-}
-
 WCHAR* StrNextTokW(WCHAR* strg, const WCHAR* tokens)
 {
     WCHAR* n = NULL;
@@ -180,45 +146,8 @@ WCHAR* StrNextTokW(WCHAR* strg, const WCHAR* tokens)
 //  GetWinVersionString()
 //
 
-#if 0
-static OSVERSIONINFOEX s_OSversion = { 0 };
-
-static void _GetTrueWindowsVersion()
-{
-    if (s_OSversion.dwOSVersionInfoSize != 0) {
-        return;
-    }
-
-    // clear
-    ZeroMemory(&s_OSversion, sizeof(OSVERSIONINFOEX));
-    s_OSversion.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-
-    // Function pointer to driver function
-    void (WINAPI *pRtlGetVersion)(PRTL_OSVERSIONINFOW lpVersionInformation) = NULL;
-
-    // load the System-DLL
-    HINSTANCE const hNTdllDll = LoadLibrary(L"ntdll.dll");
-    if (hNTdllDll) {
-        // get the function pointer to RtlGetVersion
-        pRtlGetVersion = (void (WINAPI*)(PRTL_OSVERSIONINFOW)) GetProcAddress(hNTdllDll, "RtlGetVersion");
-
-        if (pRtlGetVersion != NULL) {
-            pRtlGetVersion((PRTL_OSVERSIONINFOW)& s_OSversion);
-        }
-        FreeLibrary(hNTdllDll);
-    } // if (hNTdllDll != NULL)
-
-#pragma warning ( push )
-#pragma warning ( disable: 4996 )
-    // if function failed, use fallback to old version
-    if (pRtlGetVersion == NULL) {
-        GetVersionEx((OSVERSIONINFO*)& s_OSversion);
-    }
-#pragma warning ( pop )
-
-}
+// _GetTrueWindowsVersion() removed — use GetWindowsBuildNumber() from DarkMode.cpp
 // ----------------------------------------------------------------------------
-#endif
 
 
 void GetWinVersionString(LPWSTR szVersionStr, size_t cchVersionStr)
@@ -227,26 +156,12 @@ void GetWinVersionString(LPWSTR szVersionStr, size_t cchVersionStr)
 
     DWORD const build = GetWindowsBuildNumber(NULL, NULL);
 
-    if (IsWindows10OrGreater()) {
-        StringCchCat(szVersionStr, cchVersionStr, IsWindowsServer() ? ((build >= 17134) ? L"Server 2019 " : L"Server 2016 ") :
-                                                                      ((build >= 22000) ? L"11 " : L"10 "));          
-    } else if (IsWindows8Point1OrGreater()) {
-        StringCchCat(szVersionStr, cchVersionStr, IsWindowsServer() ? L"Server 2012 R2 " : L"8.1");
-    } else if (IsWindows8OrGreater()) {
-        StringCchCat(szVersionStr, cchVersionStr, IsWindowsServer() ? L"Server 2012 " : L"8");
-    } else if (IsWindows7SP1OrGreater()) {
-        StringCchCat(szVersionStr, cchVersionStr, IsWindowsServer() ? L"Server 2008 R2 " : L"7 (SP1)");
-    } else if (IsWindows7OrGreater()) {
-        StringCchCat(szVersionStr, cchVersionStr, IsWindowsServer() ? L"Server 2008 " : L"7");
-    } else {
-        StringCchCat(szVersionStr, cchVersionStr, IsWindowsServer() ? L"Unkown Server " : L"?");
-    }
+    StringCchCat(szVersionStr, cchVersionStr, IsWindowsServer() ? ((build >= 17134) ? L"Server 2019 " : L"Server 2016 ") :
+                                                                  ((build >= 22000) ? L"11 " : L"10 "));
 
-    if (IsWindows10OrGreater()) {
-        WCHAR win10ver[80] = { L'\0' };
-        StringCchPrintf(win10ver, COUNTOF(win10ver), L" Version %s (Build %lu)", _Win10BuildToReleaseId(build), GetWindowsBuildNumber(NULL, NULL));
-        StringCchCat(szVersionStr, cchVersionStr, win10ver);
-    }
+    WCHAR win10ver[80] = { L'\0' };
+    StringCchPrintf(win10ver, COUNTOF(win10ver), L" Version %s (Build %lu)", _Win10BuildToReleaseId(build), build);
+    StringCchCat(szVersionStr, cchVersionStr, win10ver);
 }
 
 
@@ -297,6 +212,36 @@ HRESULT PrivateSetCurrentProcessExplicitAppUserModelID(PCWSTR AppID)
 
 //=============================================================================
 //
+//  SetWindowAppUserModelID()
+//
+HRESULT SetWindowAppUserModelID(HWND hwnd, PCWSTR AppID)
+{
+    if (!hwnd || StrIsEmpty(AppID)) {
+        return S_OK;
+    }
+    if (StringCchCompareXI(AppID, L"(default)") == 0) {
+        return S_OK;
+    }
+
+    IPropertyStore* pps = NULL;
+    HRESULT hr = SHGetPropertyStoreForWindow(hwnd, &IID_IPropertyStore, (void**)&pps);
+    if (SUCCEEDED(hr)) {
+        PROPVARIANT pv;
+        PropVariantInit(&pv);
+        pv.vt = VT_LPWSTR;
+        hr = SHStrDupW(AppID, &pv.pwszVal);
+        if (SUCCEEDED(hr)) {
+            hr = pps->lpVtbl->SetValue(pps, &PKEY_AppUserModel_ID, &pv);
+            PropVariantClear(&pv);
+        }
+        pps->lpVtbl->Release(pps);
+    }
+    return hr;
+}
+
+
+//=============================================================================
+//
 //  IsProcessElevated()
 //
 //   PURPOSE: The function gets the elevation information of the current
@@ -320,15 +265,6 @@ HRESULT PrivateSetCurrentProcessExplicitAppUserModelID(PCWSTR AppID)
 //
 bool IsProcessElevated()
 {
-
-    // When the process is run on operating systems prior to Windows
-    // Vista, GetTokenInformation returns FALSE with the
-    // ERROR_INVALID_PARAMETER error code because TokenElevation is
-    // not supported on those operating systems.
-    if (!IsWindowsVistaOrGreater()) {
-        return false;
-    }
-
     bool bIsElevated = false;
     HANDLE hToken = NULL;
     Globals.dwLastError = ERROR_SUCCESS;
@@ -357,7 +293,7 @@ bool IsProcessElevated()
     }
 
     if (Globals.dwLastError != ERROR_SUCCESS) {
-        MsgBoxLastError(pLastErrMsg, Globals.dwLastError);
+        InfoBoxLastError(pLastErrMsg, Globals.dwLastError);
     }
 
     return bIsElevated;
@@ -486,7 +422,7 @@ bool IsUserInAdminGroup()
     }
 
     if (Globals.dwLastError != ERROR_SUCCESS) {
-        MsgBoxLastError(pLastErrMsg, Globals.dwLastError);
+        InfoBoxLastError(pLastErrMsg, Globals.dwLastError);
     }
 
     return fInAdminGroup;
@@ -555,9 +491,15 @@ bool IsRunAsAdmin()
 void BackgroundWorker_Init(BackgroundWorker* worker, HWND hwnd, const HPATHL hFilePath)
 {
     if (worker) {
+        if (IS_VALID_HANDLE(worker->eventCancel)) {
+            return; // already initialized — call Destroy first
+        }
         worker->hwnd = hwnd;
         // manual (not automatic) reset & initial state: not signaled (TRUE, FALSE)
         worker->eventCancel = CreateEvent(NULL, TRUE, FALSE, NULL);
+        if (!IS_VALID_HANDLE(worker->eventCancel)) {
+            worker->eventCancel = INVALID_HANDLE_VALUE;
+        }
         worker->workerThread = INVALID_HANDLE_VALUE;
         worker->hFilePath = Path_Allocate(Path_Get(hFilePath));
     }
@@ -566,26 +508,49 @@ void BackgroundWorker_Init(BackgroundWorker* worker, HWND hwnd, const HPATHL hFi
 void BackgroundWorker_Start(BackgroundWorker* worker, _beginthreadex_proc_type routine, LPVOID property)
 {
     if (worker) {
-        ResetEvent(worker->eventCancel); // init should be 'not signaled'
+        if (IS_VALID_HANDLE(worker->eventCancel)) {
+            ResetEvent(worker->eventCancel); // init should be 'not signaled'
+        }
         //~worker->workerThread = CreateThread(NULL, 0, routine, property, 0, NULL);  // MD(d) dll
         uintptr_t const thread = _beginthreadex(NULL, 0, routine, property, 0, NULL); // MT(d) static
-        InterlockedExchangePointer(&(worker->workerThread), (thread != 0LL) ? (HANDLE)thread : INVALID_HANDLE_VALUE);
+        HANDLE const hOld = InterlockedExchangePointer(&(worker->workerThread), (thread != 0LL) ? (HANDLE)thread : INVALID_HANDLE_VALUE);
+        if (IS_VALID_HANDLE(hOld)) {
+            CloseHandle(hOld); // prevent handle leak from re-entrant Start
+        }
     }
 }
 
 void BackgroundWorker_Cancel(BackgroundWorker* worker) {
     if (worker) {
-        SetEvent(worker->eventCancel); // signal
+        if (IS_VALID_HANDLE(worker->eventCancel)) {
+            SetEvent(worker->eventCancel); // signal
+        }
         HANDLE const workerThread = InterlockedExchangePointer(&(worker->workerThread), INVALID_HANDLE_VALUE);
         if (IS_VALID_HANDLE(workerThread)) {
-            // Optimize: MsgDispatch only in case of hwnd ?
-            // DWORD const wait = SignalObjectAndWait(worker->eventCancel, workerThread, 100 /*INFINITE*/, FALSE);
-            while (WaitForSingleObject(workerThread, 0) != WAIT_OBJECT_0) {
-                MSG msg;
-                if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-                    TranslateMessage(&msg);
-                    DispatchMessage(&msg);
+            DWORD const dwTimeout = 5000; // 5 seconds for graceful exit
+            ULONGLONG const dwStart = GetTickCount64();
+
+            // Wait for thread exit, only pumping cross-thread SendMessage to prevent deadlocks.
+            // Posted messages (WM_TIMER, WM_COMMAND, etc.) are left in the queue — dispatching
+            // them here could cause reentrancy in the caller (e.g., mid-FileSave).
+            while (true) {
+                ULONGLONG const dwElapsed = GetTickCount64() - dwStart;
+                DWORD const dwRemaining = (DWORD)((dwElapsed < dwTimeout) ? (dwTimeout - dwElapsed) : 0);
+                DWORD const dwWait = MsgWaitForMultipleObjects(1, &workerThread, FALSE, dwRemaining, QS_SENDMESSAGE);
+                if (dwWait == WAIT_OBJECT_0) {
+                    break; // thread exited
                 }
+                if (dwWait == WAIT_OBJECT_0 + 1) {
+                    // Process only sent messages (cross-thread SendMessage), not posted messages
+                    MSG msg;
+                    PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE);
+                    continue;
+                }
+                // WAIT_TIMEOUT or WAIT_FAILED — ensure thread is dead before cleanup
+                if (dwWait == WAIT_TIMEOUT) {
+                    WaitForSingleObject(workerThread, INFINITE);
+                }
+                break;
             }
             CloseHandle(workerThread);
         }
@@ -598,7 +563,10 @@ void BackgroundWorker_Destroy(BackgroundWorker* worker)
 {
     if (worker) {
         BackgroundWorker_Cancel(worker);
-        CloseHandle(InterlockedExchangePointer(&(worker->eventCancel), INVALID_HANDLE_VALUE));
+        HANDLE const hEvent = InterlockedExchangePointer(&(worker->eventCancel), INVALID_HANDLE_VALUE);
+        if (IS_VALID_HANDLE(hEvent)) {
+            CloseHandle(hEvent);
+        }
         Path_Release(worker->hFilePath);
         worker->hFilePath = NULL;
     }
@@ -879,6 +847,86 @@ bool StrRTrimI(LPWSTR pszSource, LPCWSTR pszTrimChars)
 }
 
 
+//=============================================================================
+//
+//  StrTrimUTF8()
+//
+//  Code-page independent in-place replacement for StrTrimA() on UTF-8 buffers.
+//  StrTrimA() is DBCS-aware and walks the string via the process ANSI code page
+//  (CharNextA). On a DBCS system ANSI code page (e.g. CP-936/932/949/950) a UTF-8
+//  trail byte can be mistaken for a lead byte and "swallow" a following \r/\n,
+//  so trailing EOLs are not stripped (issue #5963: "Sort Lines" inserts blank
+//  lines). All our trim characters are ASCII (< 0x80) and every UTF-8 non-ASCII
+//  byte is >= 0x80, so a plain byte-wise trim can never partially match a
+//  multibyte sequence and is correct regardless of the system locale.
+//
+bool StrTrimUTF8(LPSTR psz, LPCSTR pszTrimChars)
+{
+    if (!psz || !*psz || !pszTrimChars) {
+        return false;
+    }
+
+    size_t const orgLen = StringCchLenA(psz, 0);
+
+    LPSTR start = psz;
+    while (*start && ((unsigned char)*start < 0x80) && StrChrA(pszTrimChars, *start)) {
+        ++start;
+    }
+
+    LPSTR end = start + StringCchLenA(start, 0);
+    while ((end > start) && ((unsigned char)end[-1] < 0x80) && StrChrA(pszTrimChars, end[-1])) {
+        --end;
+    }
+    *end = '\0';
+
+    size_t const newLen = (size_t)(end - start);
+    if (start != psz) {
+        MoveMemory(psz, start, newLen + 1);
+    }
+    return (newLen != orgLen);
+}
+
+
+//=============================================================================
+//
+//  StrStrIA_UTF8()
+//
+//  Code-page independent, byte-wise, ASCII case-insensitive substring search
+//  for UTF-8 buffers. shlwapi's StrStrIA()/StrStrA()/StrChrA() walk the haystack
+//  with DBCS character boundaries via the process ANSI code page, so on a DBCS
+//  ACP (CP-936/932/949/950) a UTF-8 lead/continuation byte can be mistaken for a
+//  DBCS lead byte and hide a following ASCII byte, corrupting the match (same
+//  root cause as issue #5963). UTF-8 is self-synchronizing: an ASCII byte (<0x80)
+//  never appears inside a multibyte sequence, so a byte-wise search with an ASCII
+//  needle is correct on any locale. Case folding is applied to ASCII letters only.
+//
+char* StrStrIA_UTF8(const char* pszSource, const char* pszSub)
+{
+    if (!pszSource || !pszSub) {
+        return NULL;
+    }
+    if (!*pszSub) {
+        return (char*)pszSource;
+    }
+    for (const char* s = pszSource; *s; ++s) {
+        const char* a = s;
+        const char* b = pszSub;
+        while (*a && *b) {
+            unsigned char ca = (unsigned char)*a;
+            unsigned char cb = (unsigned char)*b;
+            if ((ca >= 'A') && (ca <= 'Z')) { ca += 32; }
+            if ((cb >= 'A') && (cb <= 'Z')) { cb += 32; }
+            if (ca != cb) { break; }
+            ++a; ++b;
+        }
+        if (!*b) {
+            return (char*)s;
+        }
+    }
+    return NULL;
+}
+
+
 #if 0
 
 //=============================================================================
@@ -1136,29 +1184,400 @@ void PathFixBackslashes(LPWSTR lpsz)
 
 //=============================================================================
 //
+//  _IsAllDigitsW() - non-empty wide string consisting solely of ASCII digits
+//
+static inline bool _IsAllDigitsW(LPCWSTR s)
+{
+    if (!s || *s == L'\0') {
+        return false;
+    }
+    for (; *s; ++s) {
+        if (*s < L'0' || *s > L'9') {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+//=============================================================================
+//
+//  _StripCommonQuoting() - in-place strip of whitespace + quote-like chars
+//                          that wrap a path/URL token in source/log/doc text.
+//
+static inline void _StripCommonQuoting(HSTRINGW hstr)
+{
+    StrgTrim(hstr, L' ');
+    StrgTrim(hstr, L'\t');
+    StrgTrim(hstr, L'"');
+    StrgTrim(hstr, L'\'');
+    StrgTrim(hstr, L'`');
+    StrgTrim(hstr, L'<');
+    StrgTrim(hstr, L'>');
+}
+
+
+//=============================================================================
+//
 //  SplitFilePathLineNum()
+//
+//  Strips a trailing ":N" digit-only line-number suffix from lpszPath in
+//  place and writes N into *lineNum (if non-NULL). Returns true on a strip.
+//  No expression evaluation — `foo:42` works; `foo:42+1` does NOT.
 //
 bool SplitFilePathLineNum(LPWSTR lpszPath, int* lineNum)
 {
-
     LPWSTR const lpszSplit = StrRChr(lpszPath, NULL, L':');
+    if (!lpszSplit || !_IsAllDigitsW(lpszSplit + 1)) {
+        return false;
+    }
+    int const ln = _wtoi(lpszSplit + 1);
+    lpszSplit[0] = L'\0'; // split in place
+    if (lineNum) {
+        *lineNum = ln;
+    }
+    return true;
+}
 
-    bool res = false;
-    if (lpszSplit) {
-        char       chLnNumber[128];
-        char const defchar = (char)0x24;
-        WideCharToMultiByte(CP_ACP, (WC_COMPOSITECHECK | WC_DISCARDNS), &lpszSplit[1], -1, chLnNumber, COUNTOF(chLnNumber), &defchar, NULL);
-        te_int_t iExprError = true;
-        int const ln = (int)te_interp(chLnNumber, &iExprError);
-        if (!iExprError) {
-            res = true;
-            lpszSplit[0] = L'\0'; // split
-            if (lineNum) {
-                *lineNum = ln;
+
+//=============================================================================
+//
+//  SplitFilePathLineColNum()
+//
+//  Strips an optional trailing line/column suffix from lpszPath in place.
+//  Patterns recognised (first match wins):
+//      foo.c(42)        -> line 42
+//      foo.c,42         -> line 42
+//      foo.c:42:7       -> line 42, column 7
+//      foo.c:42         -> falls through to SplitFilePathLineNum (single colon)
+//
+//  Drive-letter colons ("C:\...") are never treated as line separators.
+//  Returns true if a suffix was stripped.
+//
+bool SplitFilePathLineColNum(LPWSTR lpszPath, int* lineNum, int* colNum)
+{
+    if (lineNum) {
+        *lineNum = -1;
+    }
+    if (colNum) {
+        *colNum = -1;
+    }
+    if (StrIsEmpty(lpszPath)) {
+        return false;
+    }
+
+    size_t len = StrlenW(lpszPath);
+    while (len > 0 && (lpszPath[len - 1] == L' ' || lpszPath[len - 1] == L'\t')) {
+        lpszPath[--len] = L'\0';
+    }
+    if (len == 0) {
+        return false;
+    }
+
+    // Try trailing "(N)"
+    if (lpszPath[len - 1] == L')') {
+        size_t j = len - 1; // points at ')'
+        while (j > 0 && lpszPath[j - 1] >= L'0' && lpszPath[j - 1] <= L'9') {
+            --j;
+        }
+        if (j < (len - 1) && j > 0 && lpszPath[j - 1] == L'(') {
+            int const ln = _wtoi(&lpszPath[j]);
+            if (ln > 0) {
+                lpszPath[j - 1] = L'\0';
+                if (lineNum) {
+                    *lineNum = ln;
+                }
+                return true;
             }
         }
     }
-    return res;
+
+    // Try trailing ",N"
+    {
+        size_t i = len;
+        while (i > 0 && lpszPath[i - 1] >= L'0' && lpszPath[i - 1] <= L'9') {
+            --i;
+        }
+        if (i < len && i > 0 && lpszPath[i - 1] == L',') {
+            int const ln = _wtoi(&lpszPath[i]);
+            if (ln > 0) {
+                lpszPath[i - 1] = L'\0';
+                if (lineNum) {
+                    *lineNum = ln;
+                }
+                return true;
+            }
+        }
+    }
+
+    // Try trailing ":N:M" (line + column). Reject drive-letter colon at pos 1.
+    LPWSTR lastColon = StrRChr(lpszPath, NULL, L':');
+    if (lastColon && lastColon != (lpszPath + 1) && _IsAllDigitsW(lastColon + 1)) {
+        int const second = _wtoi(lastColon + 1);
+        wchar_t const saved = *lastColon;
+        *lastColon = L'\0';
+        LPWSTR prevColon = StrRChr(lpszPath, NULL, L':');
+        if (prevColon && prevColon != (lpszPath + 1) && _IsAllDigitsW(prevColon + 1)) {
+            int const first = _wtoi(prevColon + 1);
+            if (first > 0 && second > 0) {
+                *prevColon = L'\0';
+                if (lineNum) {
+                    *lineNum = first;
+                }
+                if (colNum) {
+                    *colNum = second;
+                }
+                return true;
+            }
+        }
+        *lastColon = saved;
+    }
+
+    // Single-colon fallback: digit-only :N parse.
+    return SplitFilePathLineNum(lpszPath, lineNum);
+}
+
+
+//=============================================================================
+//
+//  _IsTokenBoundary() - true for chars that delimit a path/URL token
+//                       when no selection is present.
+//
+static inline bool _IsTokenBoundary(char c)
+{
+    switch (c) {
+    case ' ': case '\t': case '\r': case '\n':
+    case '\'': case '`': case '"':
+    case '<': case '>': case '|': case '*':
+    case ',': case ';':
+        return true;
+    default:
+        return false;
+    }
+}
+
+
+//=============================================================================
+//
+//  _TryMarkdownLinkSpan() - if caret sits inside `(...)` preceded by `]` on
+//                            the same line, return the inner (url) span.
+//                            Handles nested parens via depth counting.
+//
+static bool _TryMarkdownLinkSpan(DocPos pos, DocPos lineStart, DocPos lineEnd,
+                                  DocPos* outStart, DocPos* outEnd)
+{
+    DocPos openP = -1;
+    int depth = 0;
+    for (DocPos p = pos; p > lineStart; --p) {
+        char const c = SciCall_GetCharAt(p - 1);
+        if (c == ')') {
+            ++depth;
+        }
+        else if (c == '(') {
+            if (depth == 0) {
+                if (p - 1 > lineStart && SciCall_GetCharAt(p - 2) == ']') {
+                    openP = p - 1;
+                }
+                break;
+            }
+            --depth;
+        }
+    }
+    if (openP < 0) {
+        return false;
+    }
+    int d2 = 0;
+    for (DocPos p = pos; p < lineEnd; ++p) {
+        char const c = SciCall_GetCharAt(p);
+        if (c == '(') {
+            ++d2;
+        }
+        else if (c == ')') {
+            if (d2 == 0) {
+                *outStart = openP + 1;
+                *outEnd = p;
+                return true;
+            }
+            --d2;
+        }
+    }
+    return false;
+}
+
+
+//=============================================================================
+//
+//  ExtractSelectionOrTokenAtCaret()
+//
+//  Returns a freshly-allocated HSTRINGW (caller must StrgDestroy()) holding
+//  the current selection, or - if the selection is empty - the span around
+//  the caret bounded by [\s'`"<>|*,;]. Newline-truncates selections.
+//  Strips surrounding whitespace and quote-like characters.
+//  Special-cases Markdown link targets: caret inside `[label](url)` parens
+//  grabs `url` rather than expanding outward.
+//
+HSTRINGW ExtractSelectionOrTokenAtCaret(void)
+{
+    HSTRINGW hstr = StrgCreate(NULL);
+
+    DocPos byteStart = 0;
+    DocPos byteEnd = 0;
+
+    if (!SciCall_IsSelectionEmpty()) {
+        byteStart = SciCall_GetSelectionStart();
+        byteEnd = SciCall_GetSelectionEnd();
+        // truncate selection at first \r, \n, \t
+        for (DocPos p = byteStart; p < byteEnd; ++p) {
+            char const c = SciCall_GetCharAt(p);
+            if (c == '\r' || c == '\n' || c == '\t') {
+                byteEnd = p;
+                break;
+            }
+        }
+    }
+    else {
+        DocPos const pos = SciCall_GetCurrentPos();
+        DocLn  const ln = SciCall_LineFromPosition(pos);
+        DocPos const lineStart = SciCall_PositionFromLine(ln);
+        DocPos const lineEnd = SciCall_GetLineEndPosition(ln);
+
+        if (!_TryMarkdownLinkSpan(pos, lineStart, lineEnd, &byteStart, &byteEnd)) {
+            byteStart = pos;
+            while (byteStart > lineStart && !_IsTokenBoundary(SciCall_GetCharAt(byteStart - 1))) {
+                --byteStart;
+            }
+            byteEnd = pos;
+            while (byteEnd < lineEnd && !_IsTokenBoundary(SciCall_GetCharAt(byteEnd))) {
+                ++byteEnd;
+            }
+        }
+    }
+
+    if (byteEnd > byteStart) {
+        DocPos const length = byteEnd - byteStart;
+        const char* const pszRange = SciCall_GetRangePointer(byteStart, length);
+        if (pszRange) {
+            int const wlen = MultiByteToWideChar(Encoding_SciCP, 0, pszRange, (int)length, NULL, 0);
+            if (wlen > 0) {
+                LPWSTR const buf = StrgWriteAccessBuf(hstr, (size_t)wlen + 1);
+                int const written = MultiByteToWideChar(Encoding_SciCP, 0, pszRange, (int)length, buf, wlen);
+                buf[written] = L'\0';
+                StrgSanitize(hstr);
+            }
+        }
+    }
+
+    if (StrgIsNotEmpty(hstr)) {
+        _StripCommonQuoting(hstr);
+    }
+
+    return hstr;
+}
+
+
+//=============================================================================
+//
+//  Path_CanonicalizeWithDocAnchor()
+//
+//  In-place canonicalisation using the document-anchor priority:
+//     1) directory of Paths.CurrentFile (when non-empty)
+//     2) Paths.WorkingDirectory (fallback)
+//     never Paths.ModuleDirectory.
+//
+//  Safe to call for both relative and absolute paths — Path_CanonicalizeEx
+//  only joins the anchor when the path IS relative.
+//
+void Path_CanonicalizeWithDocAnchor(HPATHL hpth)
+{
+    HPATHL hAnchor = Path_Allocate(NULL);
+    if (Path_IsNotEmpty(Paths.CurrentFile)) {
+        Path_Reset(hAnchor, Path_Get(Paths.CurrentFile));
+        Path_RemoveFileSpec(hAnchor);
+    }
+    if (Path_IsEmpty(hAnchor) && Path_IsNotEmpty(Paths.WorkingDirectory)) {
+        Path_Reset(hAnchor, Path_Get(Paths.WorkingDirectory));
+    }
+    Path_CanonicalizeEx(hpth, hAnchor);
+    Path_Release(hAnchor);
+}
+
+
+//=============================================================================
+//
+//  ResolveSelectionToPath()
+//
+//  Best-effort resolution of a selection token to an absolute filesystem path.
+//
+//  Steps:
+//    - Strip a leading file:// / file:/// prefix via PathCreateFromUrlW.
+//    - Expand %VAR% environment references.
+//    - If relative: canonicalise against (1) the directory of Paths.CurrentFile
+//      when non-empty, otherwise (2) Paths.WorkingDirectory.
+//      NEVER against Paths.ModuleDirectory.
+//    - Probe filesystem; set *isDir true for an existing directory.
+//
+//  Returns true iff the resolved path exists. hpthOut is always populated
+//  with the best-effort resolution (caller may inspect on false).
+//
+bool ResolveSelectionToPath(LPCWSTR token, HPATHL hpthOut, bool* isDir)
+{
+    if (isDir) {
+        *isDir = false;
+    }
+    if (!hpthOut) {
+        return false;
+    }
+    Path_Empty(hpthOut, true);
+    if (StrIsEmpty(token)) {
+        return false;
+    }
+
+    // Defensive: callers may pass un-trimmed input. '<' '>' are shell-quote /
+    // mail-style URL wrappers, never legitimate at a path-token boundary —
+    // safe to strip even though they are valid filename chars mid-name.
+    HSTRINGW htmp = StrgCreate(token);
+    _StripCommonQuoting(htmp);
+
+    if (StrgIsEmpty(htmp)) {
+        StrgDestroy(htmp);
+        return false;
+    }
+
+    // file:// / file:/// -> Windows path. Try Shell's PathCreateFromUrlW first;
+    // on failure (malformed URL), fall back to a manual prefix strip so the
+    // canonicalization step below still has a usable best-effort path.
+    LPCWSTR const raw = StrgGet(htmp);
+    if (StrCmpNIW(raw, L"file://", 7) == 0) {
+        WCHAR szPath[INTERNET_MAX_URL_LENGTH + 1] = { L'\0' };
+        DWORD cch = COUNTOF(szPath);
+        if (SUCCEEDED(PathCreateFromUrlW(raw, szPath, &cch, 0))) {
+            StrgReset(htmp, szPath);
+        }
+        else {
+            size_t const skip = (StrCmpNIW(raw, L"file:///", 8) == 0) ? 8 : 7;
+            HSTRINGW hStripped = StrgCreate(raw + skip);
+            StrgSwap(htmp, hStripped);
+            StrgDestroy(hStripped);
+        }
+    }
+
+    // Path_CanonicalizeEx already runs ExpandEnvironmentStrgs(hstr, true) and
+    // strips quotes — no need to expand env vars manually here.
+    Path_Reset(hpthOut, StrgGet(htmp));
+    StrgDestroy(htmp);
+
+    Path_CanonicalizeWithDocAnchor(hpthOut);
+
+    if (Path_IsExistingFile(hpthOut)) {
+        return true;
+    }
+    if (Path_IsExistingDirectory(hpthOut)) {
+        if (isDir) {
+            *isDir = true;
+        }
+        return true;
+    }
+    return false;
 }
 
 
@@ -1946,71 +2365,15 @@ ptrdiff_t MultiByteToWideCharEx(
 //
 //  UrlEscapeEx()
 //
-
-#if (NTDDI_VERSION < NTDDI_WIN8)
-
-// Convert a byte into Hexadecimal Unicode character
-__inline int toHEX(BYTE val, WCHAR* pOutChr)
-{
-    StringCchPrintfW(pOutChr, 4, L"%%%0.2X", val);
-    return 3; // num of wchars ('%FF')
-}
-
-LPCTSTR const lpszUnreservedChars = L"-_.~"; // or IsAlphaNumeric()
-LPCTSTR const lpszReservedChars = L"!#$%&'()*+,/:;=?@[]";
-LPCTSTR const lpszUnsafeChars = L" \"\\<>{|}^`";
-
-#endif
-
-// ----------------------------------------------------------------------------
-
 void UrlEscapeEx(LPCWSTR lpURL, LPWSTR lpEscaped, DWORD* pcchEscaped, bool bEscReserved)
 {
-#if (NTDDI_VERSION >= NTDDI_WIN8)
-    UNREFERENCED_PARAMETER(bEscReserved);
-    UrlEscape(lpURL, lpEscaped, pcchEscaped, (URL_ESCAPE_SEGMENT_ONLY | URL_ESCAPE_URI_COMPONENT));
-#else
-    //UrlEscape(lpURL, lpEscaped, pcchEscaped, (URL_ESCAPE_SEGMENT_ONLY | URL_ESCAPE_PERCENT | URL_ESCAPE_AS_UTF8));
-
-    DWORD posIn = 0;
-    DWORD posOut = 0;
-
-    while (lpURL[posIn] && (posOut < *pcchEscaped)) {
-        if (IsAlphaNumericW(lpURL[posIn]) || StrChrW(lpszUnreservedChars, lpURL[posIn])) {
-            lpEscaped[posOut++] = lpURL[posIn++];
-        } else if (StrChrW(lpszReservedChars, lpURL[posIn])) {
-            if (posOut < (*pcchEscaped - 3)) {
-                if (bEscReserved) {
-                    posOut += toHEX(toascii(lpURL[posIn++]), &lpEscaped[posOut]);
-                } else {
-                    lpEscaped[posOut++] = lpURL[posIn++];
-                }
-            }
-        } else if (StrChrW(lpszUnsafeChars, lpURL[posIn])) {
-            if (posOut < (*pcchEscaped - 3)) {
-                posOut += toHEX(toascii(lpURL[posIn++]), &lpEscaped[posOut]);
-            }
-        }
-        // Encode unprintable characters 0x00-0x1F, and 0x7F
-        else if ((lpURL[posIn] <= 0x1F) || (lpURL[posIn] == 0x7F)) {
-            if (posOut < (*pcchEscaped - 3)) {
-                posOut += toHEX((BYTE)lpURL[posIn++], &lpEscaped[posOut]);
-            }
-        }
-        // Now encode all other unsafe characters
-        else {
-            CHAR mb[4] = { '\0', '\0', '\0', '\0' };
-            int const n = WideCharToMultiByte(Encoding_SciCP, 0, &lpURL[posIn++], 1, mb, 4, 0, 0);
-            if (posOut < (*pcchEscaped - (n*3))) {
-                for (int i = 0; i < n; ++i) {
-                    posOut += toHEX((BYTE)mb[i], &lpEscaped[posOut]);
-                }
-            }
-        }
+    if (bEscReserved) {
+        // full component encoding (like encodeURIComponent) — for EditURLEncode
+        UrlEscape(lpURL, lpEscaped, pcchEscaped, (URL_ESCAPE_SEGMENT_ONLY | URL_ESCAPE_URI_COMPONENT));
+    } else {
+        // preserve URL structure, encode unsafe chars + non-ASCII as UTF-8, leave query/fragment as-is
+        UrlEscape(lpURL, lpEscaped, pcchEscaped, (URL_BROWSER_MODE | URL_ESCAPE_AS_UTF8));
     }
-    lpEscaped[posOut] = L'\0';
-    *pcchEscaped = posOut;
-#endif
 }
 
 
@@ -2020,72 +2383,7 @@ void UrlEscapeEx(LPCWSTR lpURL, LPWSTR lpEscaped, DWORD* pcchEscaped, bool bEscR
 //
 void UrlUnescapeEx(LPWSTR lpURL, LPWSTR lpUnescaped, DWORD* pcchUnescaped)
 {
-#if (NTDDI_VERSION >= NTDDI_WIN8)
     UrlUnescape(lpURL, lpUnescaped, pcchUnescaped, URL_UNESCAPE_AS_UTF8);
-#else
-    char * const outBuffer = AllocMem((size_t)*pcchUnescaped + 1, HEAP_ZERO_MEMORY);
-    if (!outBuffer) {
-        return;
-    }
-    DWORD const outLen = *pcchUnescaped;
-
-    DWORD posIn = 0;
-    WCHAR buf[5] = { L'\0' };
-    DWORD lastEsc = (DWORD)StringCchLen(lpURL,0) - 2;
-    unsigned int code;
-
-    DWORD posOut = 0;
-    while ((posIn < lastEsc) && (posOut < outLen)) {
-        bool bOk = false;
-        // URL encoded
-        if (lpURL[posIn] == L'%') {
-            buf[0] = lpURL[posIn + 1];
-            buf[1] = lpURL[posIn + 2];
-            buf[2] = L'\0';
-            if (swscanf_s(buf, L"%x", &code) == 1) {
-                outBuffer[posOut++] = (char)code;
-                posIn += 3;
-                bOk = true;
-            }
-        }
-        // HTML encoded
-        else if ((lpURL[posIn] == L'&') && (lpURL[posIn + 1] == L'#')) {
-            int n = 0;
-            while (IsDigitW(lpURL[posIn + 2 + n]) && (n < 4)) {
-                buf[n] = lpURL[posIn + 2 + n];
-                ++n;
-            }
-            buf[n] = L'\0';
-            if (swscanf_s(buf, L"%ui", &code) == 1) {
-                if (code <= 0xFF) {
-                    outBuffer[posOut++] = (char)code;
-                    posIn += (2 + n);
-                    if (lpURL[posIn] == L';') {
-                        ++posIn;
-                    }
-                    bOk = true;
-                }
-            }
-        }
-
-        if (!bOk) {
-            posOut += WideCharToMultiByte(Encoding_SciCP, 0, &lpURL[posIn++], 1,
-                                          &outBuffer[posOut], (int)(outLen - posOut), NULL, NULL);
-        }
-    }
-
-    // copy rest
-    while ((lpURL[posIn] != L'\0') && (posOut < outLen)) {
-        posOut += WideCharToMultiByte(Encoding_SciCP, 0, &lpURL[posIn++], 1,
-                                      &outBuffer[posOut], (int)(outLen - posOut), NULL, NULL);
-    }
-    outBuffer[posOut] = '\0';
-
-    DWORD const iOut = MultiByteToWideChar(Encoding_SciCP, 0, outBuffer, -1, lpUnescaped, (int)*pcchUnescaped);
-    FreeMem(outBuffer);
-
-    *pcchUnescaped = ((iOut > 0) ? (iOut - 1) : 0);
-#endif
 }
 
 
@@ -2196,7 +2494,7 @@ size_t ReadVectorFromString(LPCWSTR wchStrg, int iVector[], size_t iCount, int i
     }
 
     if (ordered) {
-        qsort(iVector, n, sizeof(int), _cmpifunc);
+        NP3_SORT(iVector, n, sizeof(int), _cmpifunc);
     }
 
     return n;

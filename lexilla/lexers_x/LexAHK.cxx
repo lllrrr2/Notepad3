@@ -10,6 +10,7 @@
 
 
 #include <string>
+#include <string.h>     // _stricmp, _strnicmp (MSVC CRT, case-insensitive ASCII)
 #include <assert.h>
 #include <map>
 //
@@ -202,7 +203,10 @@ Sci_Position SCI_METHOD LexerAHK::WordListSet(int n, const char *wl)
 
     int firstModification = -1;
     if (wordListN) {
-        if (wordListN->Set(wl)) {
+        // AHK is fully case-insensitive for keywords/commands/directives/etc.
+        // Load each wordlist lowercased; callers use sc.GetCurrentLowered()
+        // (Lexilla idiom — see LexVB, LexSQL, LexAU3 for the same pattern).
+        if (wordListN->Set(wl, true)) {
             firstModification = 0;
         }
     }
@@ -212,6 +216,8 @@ Sci_Position SCI_METHOD LexerAHK::WordListSet(int n, const char *wl)
 
 void LexerAHK::HighlightKeyword(char currentWord[], StyleContext& sc) {
 
+    // Wordlists are stored lowercase (see WordListSet); callers MUST pass an
+    // already-lowercased buffer (use sc.GetCurrentLowered() at the call site).
     if (controlFlow.InList(currentWord)) {
         sc.ChangeState(SCE_AHK_WORD_CF);
     }
@@ -265,6 +271,8 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
     */
     // True if in a continuation section
     bool bContinuationSection = (initStyle == SCE_AHK_STRING);
+    // True if the active continuation section is expression-mode (Join opt etc.)
+    bool bExprContinuation = false;
     // Indicate if the lexer has seen only spaces since the start of the line
     bool bOnlySpaces = (!bContinuationSection);
     // Indicate if since the start of the line, lexer met only legal label chars
@@ -278,6 +286,15 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
     bool bInExprString = false;
     // To accept A-F chars in a number
     bool bInHexNumber = false;
+    // To accept digits after e/E in scientific notation
+    bool bInExponent = false;
+    // Inside a Send / SendInput / SendRaw / ControlSend* argument run
+    // (line-scoped; resets at line start)
+    bool bInSendArgs = false;
+    // True if the current identifier started at line start (no preceding non-space).
+    // Captured at IDENTIFIER entry; used at IDENTIFIER termination to disambiguate
+    // command-call Send from expression-operand Send.
+    bool bIdentAtLineStart = false;
 
 
     for (; sc.More(); sc.Forward()) {
@@ -306,11 +323,15 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
             bIsLabel = false;
             bInExpression = false;	// I don't manage multiline expressions yet!
             bInHexNumber = false;
+            bInExponent = false;
+            bInSendArgs = false;
+            bIdentAtLineStart = false;
         }
 
         // Manage cases occuring in (almost) all states (not in comments)
         if (sc.state != SCE_AHK_COMMENTLINE &&
             sc.state != SCE_AHK_COMMENTBLOCK &&
+            sc.state != SCE_AHK_COMMENTDOC &&
             !IsASpace(sc.ch)) {
             if (sc.ch == '`') {
                 // Backtick, escape sequence
@@ -376,7 +397,7 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
                     // Hotkey F2:: or remapping a::b
                     bIsHotkey = true;
                     // Check if it is a known key
-                    sc.GetCurrent(currentWord, sizeof(currentWord));
+                    sc.GetCurrentLowered(currentWord, sizeof(currentWord));
                     if (keysButtons.InList(currentWord)) {
                         sc.ChangeState(SCE_AHK_WORD_KB);
                     }
@@ -398,7 +419,7 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
         }
 
         // Determine if the current state should terminate.
-        if (sc.state == SCE_AHK_COMMENTLINE) {
+        if (sc.state == SCE_AHK_COMMENTLINE || sc.state == SCE_AHK_COMMENTDOC) {
             if (sc.atLineEnd) {
                 sc.SetState(SCE_AHK_DEFAULT);
             }
@@ -416,9 +437,9 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
             }
         }
         else if (sc.state == SCE_AHK_STRING) {
-            if (bContinuationSection) {
+            if (bContinuationSection && !bExprContinuation) {
                 if (bOnlySpaces && sc.ch == ')') {
-                    // End of continuation section
+                    // End of literal-string continuation section
                     bContinuationSection = false;
                     sc.SetState(SCE_AHK_SYNOPERATOR);
                 }
@@ -452,15 +473,49 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
                     sc.SetState(SCE_AHK_DEFAULT);
                 }
             }
+            else if (bInExponent) {
+                if (!IsADigit(sc.ch)) {
+                    bInExponent = false;
+                    sc.SetState(SCE_AHK_DEFAULT);
+                }
+            }
+            else if ((sc.ch == 'e' || sc.ch == 'E') &&
+                     (IsADigit(sc.chNext) || sc.chNext == '+' || sc.chNext == '-')) {
+                // Scientific notation: enter exponent sub-state, optionally consume sign
+                bInExponent = true;
+                if (sc.chNext == '+' || sc.chNext == '-') {
+                    sc.Forward();
+                }
+            }
             else if (!(IsADigit(sc.ch) || sc.ch == '.')) {
                 sc.SetState(SCE_AHK_DEFAULT);
             }
         }
         else if (sc.state == SCE_AHK_IDENTIFIER) {
             if (!WordChar.Contains(sc.ch)) {
-                sc.GetCurrent(currentWord, sizeof(currentWord));
+                sc.GetCurrentLowered(currentWord, sizeof(currentWord));
                 HighlightKeyword(currentWord, sc);
-                if (strcmp(currentWord, "if") == 0) {
+                // AHK_L user-function call: unknown identifier immediately followed by `(`
+                if (sc.state == SCE_AHK_DEFAULT && sc.ch == '(') {
+                    sc.ChangeState(SCE_AHK_WORD_UD);
+                }
+                // Send/SendInput/SendRaw/SendPlay/SendEvent/SendUnicode/ControlSend[Raw]
+                // — flag the rest of the line so `{`/`}` style as WORD_KB instead of
+                // SYNOPERATOR (which keeps Fold() from oscillating on key braces).
+                // Gated on bIdentAtLineStart to avoid false positives like `if (Send)`
+                // or `MyFunc(Send, ...)` where Send is a variable, not a command call.
+                if (sc.state == SCE_AHK_WORD_CMD && bIdentAtLineStart) {
+                    if (_strnicmp(currentWord, "Send", 4) == 0 ||
+                        _strnicmp(currentWord, "ControlSend", 11) == 0) {
+                        bInSendArgs = true;
+                    }
+                }
+                // AHK keywords are case-insensitive; flow-of-control `if` and the
+                // `#If <expr>` directive both put the rest of the line in expression
+                // mode. `#IfWin*` variants take a WinTitle, NOT an expression — they
+                // are excluded by the exact match on "#If".
+                if (_stricmp(currentWord, "if") == 0 ||
+                    _stricmp(currentWord, "#If") == 0) {
                     bInExpression = true;
                 }
                 sc.SetState(SCE_AHK_DEFAULT);
@@ -469,7 +524,7 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
         else if (sc.state == SCE_AHK_VARREF) {
             if (sc.ch == '%') {
                 // End of variable reference
-                sc.GetCurrent(currentWord, sizeof(currentWord));
+                sc.GetCurrentLowered(currentWord, sizeof(currentWord));
                 if (variables.InList(currentWord)) {
                     sc.ChangeState(SCE_AHK_VARREFKW);
                 }
@@ -493,13 +548,26 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
                 continue;
             }
         }
+        else if (sc.state == SCE_AHK_HOTSTRINGOPT) {
+            // End of hotstring option run :*?B0: -> abbr
+            if (sc.ch == ':') {
+                sc.SetState(SCE_AHK_SYNOPERATOR);
+                nextState = SCE_AHK_LABEL;
+                continue;
+            }
+        }
 
         // Determine if a new state should be entered
         if (sc.state == SCE_AHK_DEFAULT) {
             if (sc.ch == ';' &&
                 (bOnlySpaces || IsASpace(sc.chPrev))) {
-                // Line comments are alone on the line or are preceded by a space
-                sc.SetState(SCE_AHK_COMMENTLINE);
+                // Line comments are alone on the line or are preceded by a space.
+                // AHK_L doc-comment convention: ";@" prefix (e.g. ;@param, ;@returns)
+                if (sc.chNext == '@') {
+                    sc.SetState(SCE_AHK_COMMENTDOC);
+                } else {
+                    sc.SetState(SCE_AHK_COMMENTLINE);
+                }
             }
             else if (bOnlySpaces && sc.Match('/', '*')) {
                 // Comment at start of line (skipping white space)
@@ -507,14 +575,52 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
                 sc.Forward();
             }
             else if (sc.ch == '{' || sc.ch == '}') {
-                // Code block or special key {Enter}
+                // Inside Send-args: style as WORD_KB so Fold() (gated on SYNOPERATOR)
+                // doesn't oscillate on key-sequence braces — `Send {Tab}{Enter 3}`,
+                // `Send {{}` (literal `{`), etc. Outside Send-args these are code-block
+                // braces and need to stay SYNOPERATOR for folding to work.
+                if (bInSendArgs) {
+                    sc.SetState(SCE_AHK_WORD_KB);
+                    nextState = SCE_AHK_DEFAULT;
+                } else {
+                    sc.SetState(SCE_AHK_SYNOPERATOR);
+                }
+            }
+            else if (bExprContinuation && bContinuationSection && bOnlySpaces && sc.ch == ')') {
+                // End of expression-mode continuation section (parallel to STRING-mode
+                // end-detection at the SCE_AHK_STRING handler above).
+                bContinuationSection = false;
+                bExprContinuation = false;
                 sc.SetState(SCE_AHK_SYNOPERATOR);
+                nextState = SCE_AHK_DEFAULT;
             }
             else if (bOnlySpaces && sc.ch == '(') {
-                // Continuation section
+                // Continuation section. AHK_L: with explicit `Join` option the body is
+                // an expression continuation; otherwise it's a multi-line string literal.
                 bContinuationSection = true;
+                bExprContinuation = false;
+                {
+                    // Scan rest of the `(` line (case-insensitive) for whole-word "Join".
+                    Sci_PositionU const docEnd = startPos + lengthDoc;
+                    for (Sci_PositionU p = sc.currentPos + 1; p < docEnd; ++p) {
+                        const char c0 = styler.SafeGetCharAt(p);
+                        if (c0 == '\n' || c0 == '\r') break;
+                        if (((c0 & 0xDF) == 'J') &&
+                            ((styler.SafeGetCharAt(p+1) & 0xDF) == 'O') &&
+                            ((styler.SafeGetCharAt(p+2) & 0xDF) == 'I') &&
+                            ((styler.SafeGetCharAt(p+3) & 0xDF) == 'N')) {
+                            // Require whole-word boundary on both sides
+                            const char cPrev = (p == 0) ? ' ' : styler.SafeGetCharAt(p - 1);
+                            const char cNext = styler.SafeGetCharAt(p + 4);
+                            if (!IsAlphaNumeric(cPrev) && !IsAlphaNumeric(cNext)) {
+                                bExprContinuation = true;
+                                break;
+                            }
+                        }
+                    }
+                }
                 sc.SetState(SCE_AHK_SYNOPERATOR);
-                nextState = SCE_AHK_STRING;	// !!! Can be an expression!
+                nextState = bExprContinuation ? SCE_AHK_DEFAULT : SCE_AHK_STRING;
             }
             else if (sc.Match(':', '=') ||
                 sc.Match('+', '=') ||
@@ -525,6 +631,11 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
                 bInExpression = true;
                 sc.SetState(SCE_AHK_SYNOPERATOR);
                 sc.Forward();
+                nextState = SCE_AHK_DEFAULT;
+            }
+            else if (sc.ch == '.' && WordChar.Contains(sc.chPrev) && WordChar.Contains(sc.chNext)) {
+                // AHK_L member access: ident.ident (distinct from concat/expr operator)
+                sc.SetState(SCE_AHK_SYNOPERATOR);
                 nextState = SCE_AHK_DEFAULT;
             }
             else if (ExpOperator.Contains(sc.ch)) {
@@ -544,6 +655,7 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
                 sc.SetState(SCE_AHK_NUMBER);
             }
             else if (WordChar.Contains(sc.ch)) {
+                bIdentAtLineStart = bOnlySpaces;
                 sc.SetState(SCE_AHK_IDENTIFIER);
             }
             else if (sc.ch == ',') {
@@ -552,17 +664,24 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
             }
             else if (sc.ch == ':') {
                 if (bOnlySpaces) {
-                    // Start of hotstring :*:foo::Stuff or ::btw::Stuff
+                    // Start of hotstring :opts:abbr::Stuff or ::abbr::Stuff
                     bIsHotstring = true;
                     sc.SetState(SCE_AHK_SYNOPERATOR);
                     if (sc.chNext == ':') {
+                        // bare ::abbr::Stuff (no option run)
                         sc.Forward();
+                        nextState = SCE_AHK_LABEL;
                     }
-                    nextState = SCE_AHK_LABEL;
+                    else {
+                        // :opts:abbr::Stuff -- color the option chars distinctly
+                        nextState = SCE_AHK_HOTSTRINGOPT;
+                    }
                 }
-            }
-            else if (WordChar.Contains(sc.ch)) {
-                sc.SetState(SCE_AHK_IDENTIFIER);
+                else {
+                    // Mid-line single colon: ternary `?:`, object/map literal key:value
+                    sc.SetState(SCE_AHK_SYNOPERATOR);
+                    nextState = SCE_AHK_DEFAULT;
+                }
             }
         }
         if (!IsASpace(sc.ch)) {
@@ -571,7 +690,7 @@ void SCI_METHOD LexerAHK::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, in
     }
     // End of file: complete any pending changeState
     if (sc.state == SCE_AHK_IDENTIFIER) {
-        sc.GetCurrent(currentWord, sizeof(currentWord));
+        sc.GetCurrentLowered(currentWord, sizeof(currentWord));
         HighlightKeyword(currentWord, sc);
     }
     else if (sc.state == SCE_AHK_STRING && bInExprString) {
